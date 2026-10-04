@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<!--
+  Vystra Launcher — public review source
+  Copyright (c) 2026 Stefan Reibnegger (Vystra)
+  License: Polyform Noncommercial 1.0.0 — no commercial use.
+-->
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisCode – AGB & Nutzungsbedingungen</title>
+<style>
+  :root {
+    --bg: #0d0d11;
+    --panel: #16161c;
+    --panel-2: #1d1d25;
+    --border: #2a2a33;
+    --text: #eaeaf0;
+    --text-faint: #9a9aa8;
+    --accent: #33bbff;
+    --accent-2: #7b5cff;
+    --danger: #ff5d6c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.65; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 48px 22px 90px; }
+  header.page-head {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 8px;
+  }
+  .logo {
+    width: 42px; height: 42px; border-radius: 11px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; font-weight: 800; font-size: 20px; color: #06121c;
+  }
+  h1 { font-size: 27px; margin: 0; font-weight: 800; letter-spacing: -.02em; }
+  .sub { color: var(--text-faint); font-size: 14px; margin: 4px 0 34px; }
+  .stand { font-size: 12.5px; color: var(--text-faint); }
+
+  .intro {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 20px; margin-bottom: 30px; font-size: 14.5px;
+  }
+  .intro b { color: var(--text); }
+
+  section.para {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px 24px; margin-bottom: 18px;
+  }
+  section.para h2 {
+    font-size: 18px; margin: 0 0 12px; font-weight: 750; letter-spacing: -.01em;
+  }
+  section.para p { margin: 0 0 14px; font-size: 15px; }
+  .list { margin: 0 0 14px; padding-left: 20px; }
+  .list li { margin: 5px 0; font-size: 15px; }
+
+  .term {
+    color: var(--accent); font-weight: 700; cursor: pointer;
+    border-bottom: 1px dashed rgba(51,187,255,.5);
+    transition: color .12s;
+  }
+  .term:hover { color: #7fd4ff; }
+
+  .tldr {
+    margin-top: 6px; background: var(--panel-2); border-left: 3px solid var(--accent);
+    border-radius: 0 9px 9px 0; padding: 12px 15px;
+  }
+  .tldr-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--accent); font-weight: 800; margin-bottom: 6px;
+  }
+  .tldr ul { margin: 0; padding-left: 18px; }
+  .tldr li { font-size: 13.5px; color: var(--text); margin: 3px 0; }
+
+  .legal-note {
+    background: rgba(255,93,108,.08); border: 1px solid rgba(255,93,108,.3);
+    border-radius: 12px; padding: 16px 18px; margin: 30px 0; font-size: 13.5px;
+  }
+  .legal-note b { color: var(--danger); }
+
+  footer.foot {
+    margin-top: 40px; text-align: center; color: var(--text-faint); font-size: 12.5px;
+  }
+  footer.foot a { color: var(--accent); text-decoration: none; }
+
+  /* Info-Modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,.65);
+    display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 16px; padding: 26px; max-width: 480px; width: 100%;
+    box-shadow: 0 24px 70px rgba(0,0,0,.6);
+    animation: pop .16s ease;
+  }
+  @keyframes pop { from { transform: scale(.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h3 {
+    margin: 0 0 12px; font-size: 19px; font-weight: 800;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .modal h3::before {
+    content: "ℹ"; width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; font-size: 15px; color: #06121c; font-weight: 800;
+  }
+  .modal p { margin: 0; font-size: 14.5px; color: var(--text); line-height: 1.6; }
+  .modal-close {
+    margin-top: 20px; width: 100%; padding: 11px; border: none; cursor: pointer;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #06121c;
+    font-weight: 800; font-size: 14px; border-radius: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page-head">
+    <div class="logo">V</div>
+    <div>
+      <h1>Allgemeine Geschäftsbedingungen &amp; Nutzungsbedingungen</h1>
+    </div>
+  </header>
+  <div class="sub">
+    VisCode Launcher &amp; Plattform · <span class="stand">Stand: Juli 2026</span>
+  </div>
+
+  <div class="intro">
+    Willkommen bei VisCode. Mit der Nutzung unseres Launchers und unserer Plattform akzeptierst du die
+    folgenden Bedingungen. Wir haben die wichtigsten Begriffe <b>blau markiert</b> – ein Klick darauf
+    öffnet eine verständliche Erklärung. Unter jedem Paragrafen findest du außerdem eine kurze
+    Zusammenfassung.
+  </div>
+
+  <!-- § 1 -->
+  <section class="para">
+    <h2>§ 1 Datenschutz &amp; Anti-Cheat</h2>
+    <p>
+      Zur Gewährleistung eines fairen Spielbetriebs und zur Erkennung von Manipulationsversuchen
+      (<span class="term" data-term="anticheat">Anti-Cheat-Maßnahmen</span>) verarbeiten wir bei der
+      Nutzung unserer Software die <span class="term" data-term="hwid">Hardware-ID (HWID)</span>, die
+      <span class="term" data-term="ip">IP-Adresse</span> sowie relevante Kontoinformationen. Diese Daten
+      werden nach aktuellem Stand der Technik geschützt (u. a. verschlüsselte Übertragung und Speicherung)
+      und ausschließlich zu Sicherheitszwecken verwendet. Ein Verkauf oder eine Weitergabe an unbefugte
+      Dritte findet nicht statt.
+    </p>
+    <p>
+      Rechtsgrundlage ist unser berechtigtes Interesse an Betrugsprävention
+      (<span class="term" data-term="dsgvo">Art. 6 DSGVO</span>). Du kannst jederzeit Auskunft über deine
+      gespeicherten Daten verlangen und deren Löschung beantragen. Daten werden nur so lange gespeichert,
+      wie es für den genannten Zweck erforderlich ist.
+    </p>
+    <div class="tldr">
+      <div class="tldr-label">Kurz gesagt</div>
+      <ul>
+        <li>Zur Cheat-Erkennung speichern wir Hardware-ID, IP-Adresse und Account-Daten.</li>
+        <li>Die Daten werden geschützt und nicht verkauft oder an Unbefugte weitergegeben.</li>
+        <li>Du hast jederzeit ein Recht auf Auskunft und Löschung deiner Daten.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- § 2 -->
+  <section class="para">
+    <h2>§ 2 Sanktionen &amp; Bann-Stufen</h2>
+    <p>
+      Bei Verstößen gegen die Spielregeln, der Nutzung von
+      <span class="term" data-term="drittsoftware">Drittanbietersoftware</span> oder sonstigem
+      Fehlverhalten behalten wir uns vor, folgende
+      <span class="term" data-term="sanktionen">Sanktionen</span> zu verhängen:
+    </p>
+    <ol class="list">
+      <li><b>Verwarnungs-Bann:</b> 24 Stunden Sperrung.</li>
+      <li><b>Temporärer Bann (Stufe 2):</b> 1 Woche Sperrung.</li>
+      <li><b>Temporärer Bann (Stufe 3):</b> 1 Monat Sperrung.</li>
+      <li><b>Permanenter Bann:</b> Dauerhafte Sperrung (<span class="term" data-term="hwban">Hardware-Bann</span>).</li>
+    </ol>
+    <div class="tldr">
+      <div class="tldr-label">Kurz gesagt</div>
+      <ul>
+        <li>4-stufiges Bann-System bei Regelverstößen: 24 h, 1 Woche, 1 Monat oder dauerhaft.</li>
+        <li>Jeder Bann wird vorher geprüft; kleine Erstvergehen werden milder behandelt.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- § 3 -->
+  <section class="para">
+    <h2>§ 3 Käufe &amp; Sperrungen</h2>
+    <p>
+      Wird ein Account aufgrund von Regelverstößen gesperrt, können erworbene Spiele und Inhalte für den
+      Zeitraum der Sperre nicht genutzt werden. Für den Verlust der Nutzung durch eine selbst verschuldete
+      Sperre übernehmen wir im Rahmen des gesetzlich Zulässigen keine
+      <span class="term" data-term="haftung">Haftung</span>. Das absichtliche Ausnutzen von
+      Programmfehlern (<span class="term" data-term="bugusing">Bug-Using</span>) gilt als Regelverstoß.
+    </p>
+    <p>
+      Dein gesetzliches Widerrufsrecht für digitale Inhalte bleibt unberührt: Es erlischt erst, wenn du
+      dem sofortigen Beginn des Downloads ausdrücklich zugestimmt hast. Details regelt unsere
+      <span class="term" data-term="rueckerstattung">Rückerstattungs-Richtlinie</span>.
+    </p>
+    <div class="tldr">
+      <div class="tldr-label">Kurz gesagt</div>
+      <ul>
+        <li>Während einer Sperre sind gekaufte Inhalte nicht nutzbar.</li>
+        <li>Für selbst verschuldete Sperren haften wir nicht.</li>
+        <li>Dein gesetzliches Widerrufsrecht bleibt bestehen (bis zum Download-Start).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- § 4 -->
+  <section class="para">
+    <h2>§ 4 Verbot von Modifikationen &amp; Manipulationen</h2>
+    <p>
+      Das unbefugte Ändern von Launcher-Dateien, der Software sowie jede unbefugte
+      <span class="term" data-term="modifikation">Modifikation</span> des Spielcodes ohne ausdrückliche
+      Erlaubnis ist untersagt. Solche Handlungen können das
+      <span class="term" data-term="urheberrecht">Urheberrecht</span> verletzen und werden mit
+      Account-Einschränkungen bis hin zu permanenten Sperren geahndet.
+    </p>
+    <div class="tldr">
+      <div class="tldr-label">Kurz gesagt</div>
+      <ul>
+        <li>Launcher-, Software- oder Spieldateien ohne Erlaubnis zu verändern ist verboten.</li>
+        <li>Erlaubt sind nur Mods über offiziell freigegebene Schnittstellen.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- § 5 -->
+  <section class="para">
+    <h2>§ 5 Ausnutzen von Regellücken</h2>
+    <p>
+      Das bewusste Ausnutzen unvollständiger oder fehlender
+      <span class="term" data-term="regelluecken">Regellücken</span> zum eigenen Vorteil oder zum Schaden
+      anderer widerspricht dem <span class="term" data-term="fairplay">Fairplay</span> und wird wie ein
+      normaler Regelverstoß behandelt.
+    </p>
+    <div class="tldr">
+      <div class="tldr-label">Kurz gesagt</div>
+      <ul>
+        <li>Fehlende oder ungenaue Regeln bewusst auszunutzen wird wie ein Regelverstoß bewertet.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- § 6 -->
+  <section class="para">
+    <h2>§ 6 Fremdsoftware (VisCode-fremde Spiele)</h2>
+    <p>
+      Für Spiele und Software von Drittanbietern übernehmen wir keine
+      <span class="term" data-term="gewaehrleistung">Gewährleistung</span>. Werden Accounts auf den
+      <span class="term" data-term="launcher">Launchern von Drittanbietern</span> (z. B. Steam, Epic)
+      gesperrt, liegt dies außerhalb unseres Einflussbereichs; eine Haftung unsererseits ist im Rahmen des
+      gesetzlich Zulässigen ausgeschlossen.
+    </p>
+    <div class="tldr">
+      <div class="tldr-label">Kurz gesagt</div>
+      <ul>
+        <li>Für Spiele, die nicht von VisCode sind, übernehmen wir keine Verantwortung.</li>
+        <li>Bei Sperren auf fremden Launchern wende dich an deren Support.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- § 7 Minderjährige (neu, rechtlich wichtig) -->
+  <section class="para">
+    <h2>§ 7 Minderjährige &amp; elterliche Einwilligung</h2>
+    <p>
+      Nutzer unter 16 Jahren dürfen unsere Dienste nur mit
+      <span class="term" data-term="einwilligung">Einwilligung eines Erziehungsberechtigten</span>
+      verwenden. Werden personenbezogene Daten von Minderjährigen verarbeitet (z. B. bei der
+      Registrierung), holen wir – soweit erforderlich – die Zustimmung der Eltern ein. Eltern können der
+      Verarbeitung jederzeit widersprechen und die Löschung der Daten ihres Kindes verlangen.
+    </p>
+    <div class="tldr">
+      <div class="tldr-label">Kurz gesagt</div>
+      <ul>
+        <li>Unter 16 nur mit Erlaubnis der Eltern.</li>
+        <li>Eltern können jederzeit widersprechen und Löschung verlangen.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="legal-note">
+    <b>Hinweis:</b> Dies ist eine Vorlage für einen privaten Freundeskreis-Launcher und
+    <b>ersetzt keine rechtliche Beratung</b>. Bevor echte Klarnamen, Hardware-IDs oder Daten von
+    Minderjährigen dauerhaft gespeichert werden, sollte ein Impressum, eine vollständige
+    Datenschutzerklärung (mit Verantwortlichem/Kontakt) und ggf. rechtliche Prüfung ergänzt werden.
+  </div>
+
+  <footer class="foot">
+    © 2026 VisCode · Bei Fragen zum Datenschutz: <a href="mailto:kontakt@deine-website.de">kontakt@deine-website.de</a>
+  </footer>
+
+</div>
+
+<!-- Info-Modal -->
+<div class="modal-backdrop" id="infoBackdrop">
+  <div class="modal">
+    <h3 id="infoTitle"></h3>
+    <p id="infoText"></p>
+    <button class="modal-close" id="infoClose">Verstanden</button>
+  </div>
+</div>
+
+<script>
+  // Erklärtexte für die klickbaren Begriffe
+  const INFO = {
+    anticheat: ["Anti-Cheat-Maßnahmen", "Unsere Anti-Cheat-Software läuft im Hintergrund, während du spielst. Sie prüft den Arbeitsspeicher und die Spieldateien auf bekannte Cheat-Programme, Hacks, Bots oder unerlaubte Trainer – ausschließlich für einen fairen Spielbetrieb. Private Dokumente, Chatverläufe oder dein Browser-Verlauf werden dabei nicht gescannt."],
+    hwid: ["Hardware-ID (HWID)", "Eine Hardware-ID ist ein pseudonymer digitaler Fingerabdruck deines Computers, der aus Merkmalen deiner Komponenten (z. B. Mainboard, Festplatte) berechnet wird. Sie hilft, wiederholte schwere Regelverstöße zu unterbinden – auch wenn jemand versucht, mit neuen Accounts zurückzukehren."],
+    ip: ["IP-Adresse", "Deine IP-Adresse ist die Kennnummer, die dein Internetanbieter deinem Anschluss zuweist. Wir nutzen sie zur Abwehr von Angriffen (z. B. DDoS) und zur Zuweisung eines passenden Spiel-Servers."],
+    dsgvo: ["Rechtsgrundlage (DSGVO)", "Die Verarbeitung erfolgt auf Grundlage unseres berechtigten Interesses an Betrugs- und Missbrauchsprävention (Art. 6 Abs. 1 lit. f DSGVO) bzw. zur Vertragserfüllung. Du hast das Recht auf Auskunft, Berichtigung, Löschung und Widerspruch."],
+    drittsoftware: ["Drittanbietersoftware", "Damit ist jedes Programm gemeint, das aktiv ins Spiel eingreift, um einen unfairen Vorteil zu verschaffen (z. B. Aimbots, Wallhacks, automatisierte Klick-Skripte/Makros). Normale Programme wie Discord, OBS zum Streamen oder Grafikkarten-Overlays sind selbstverständlich erlaubt."],
+    sanktionen: ["Sanktionen", "Verstöße werden fair, aber konsequent geahndet. Jede Strafe wird vor der Verhängung geprüft. Bei kleineren Erstvergehen beginnen wir mit kurzen Sperren, um eine zweite Chance zu geben. Wer wiederholt auffällt, kann dauerhaft ausgeschlossen werden."],
+    hwban: ["Hardware-Bann", "Die härteste Strafe: Die Hardware-ID des PCs wird gesperrt. Von diesem Computer aus ist danach kein Login mehr in unseren Launcher oder unsere Spiele möglich – unabhängig vom verwendeten Account."],
+    haftung: ["Haftung", "Wir stellen unsere Plattform im gesetzlich zulässigen Rahmen bereit. Verlierst du durch eigenes Verschulden (z. B. einen Bann wegen Cheatens) den Zugriff auf deinen Account, haften wir nicht für verlorene Spielzeit oder verpasste Events. Zwingende gesetzliche Haftung (z. B. bei Vorsatz) bleibt unberührt."],
+    bugusing: ["Bug-Using", "Ein Bug ist ein Programmierfehler. Wer einen solchen Fehler entdeckt, sollte ihn dem Support melden. Wer Fehler absichtlich wiederholt ausnutzt, um sich oder anderen einen unfairen Vorteil zu verschaffen (Exploiting), riskiert eine Sperre."],
+    rueckerstattung: ["Rückerstattung", "Bei digitalen Inhalten erlischt das Widerrufsrecht, sobald du dem sofortigen Beginn des Downloads ausdrücklich zugestimmt hast. Bei einer selbst verschuldeten Sperre besteht in der Regel kein Anspruch auf Rückerstattung. Deine gesetzlichen Rechte bleiben bestehen."],
+    modifikation: ["Modifikation", "Das Verändern von Spieldateien, um sich Vorteile zu verschaffen (z. B. Texturen transparent machen oder den Launcher manipulieren), ist verboten. Erlaubt sind ausschließlich Mods, die offiziell über unsere dafür vorgesehenen Modding-Schnittstellen freigegeben sind."],
+    urheberrecht: ["Urheberrecht", "Code, Grafiken, Sounds und Design unserer Spiele und des Launchers sind geistiges Eigentum. Unerlaubte Vervielfältigung, Entschlüsselung (Reverse Engineering) oder Manipulation kann eine Urheberrechtsverletzung darstellen und wird geahndet."],
+    regelluecken: ["Regellücken", "Kein Regelwerk kann jede Situation im Voraus abdecken. Wir bewerten Vorfälle nach gesundem Menschenverstand und dem Sinn der Regeln. Was offensichtlich unfair oder schädlich für die Community ist, wird geahndet – auch wenn es nicht wörtlich verboten wurde."],
+    fairplay: ["Fairplay", "Ein faires Miteinander ist die Basis unserer Community. Verhalten, das anderen absichtlich den Spaß raubt (Griefing, schweres Trolling, Belästigung), widerspricht unserem Fairplay-Kodex und wird nicht toleriert."],
+    gewaehrleistung: ["Gewährleistung", "Fremdsoftware bieten wir lediglich auf unserer Plattform an, entwickeln sie aber nicht selbst. Daher können wir für deren Fehlerfreiheit, Updates oder dauerhafte Verfügbarkeit nicht garantieren."],
+    launcher: ["Launcher von Drittanbietern", "Wenn ein Spiel einen eigenen externen Launcher oder Drittanbieter-Accounts voraussetzt (z. B. Steam, Epic), gelten dort deren eigene Regeln. Bei Sperren dort wende dich bitte direkt an den Support des jeweiligen Anbieters."],
+    einwilligung: ["Elterliche Einwilligung", "Für Nutzer unter 16 Jahren ist die Zustimmung eines Erziehungsberechtigten erforderlich. Diese kann jederzeit widerrufen werden. Eltern haben das Recht, Auskunft über die Daten ihres Kindes zu erhalten und deren Löschung zu verlangen."]
+  };
+
+  const backdrop = document.getElementById('infoBackdrop');
+  const titleEl = document.getElementById('infoTitle');
+  const textEl = document.getElementById('infoText');
+
+  document.querySelectorAll('.term').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var key = el.getAttribute('data-term');
+      var info = INFO[key];
+      if (!info) return;
+      titleEl.textContent = info[0];
+      textEl.textContent = info[1];
+      backdrop.classList.add('open');
+    });
+  });
+
+  function closeModal() { backdrop.classList.remove('open'); }
+  document.getElementById('infoClose').addEventListener('click', closeModal);
+  backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>

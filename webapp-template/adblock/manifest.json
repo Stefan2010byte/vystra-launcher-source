@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Vystra AdBlock",
+  "version": "1.0",
+  "description": "Blockt Werbung & Tracker in Vystra Web-Apps.",
+  "permissions": [
+    "declarativeNetRequest"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "vystra_ads",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  }
+}

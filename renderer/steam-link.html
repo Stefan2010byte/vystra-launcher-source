@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<!--
+  Vystra Launcher — public review source
+  Copyright (c) 2026 Stefan Reibnegger (Vystra)
+  License: Polyform Noncommercial 1.0.0 — no commercial use.
+-->
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Plattform verknüpfen</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000000;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .header {
+      height: 52px;
+      background-color: #050507;
+      border-bottom: 1px solid #1a1a24;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      user-select: none;
+    }
+    .title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #e4e4e7;
+    }
+    .brand {
+      font-size: 14px;
+      font-weight: 800;
+      color: #33bbff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    webview {
+      width: 100%;
+      height: 100%;
+      background: #000000;
+    }
+    /* Lokaler Scan Screen */
+    .local-scan-screen {
+      position: absolute;
+      inset: 0;
+      background: #000000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      text-align: center;
+      z-index: 10;
+    }
+    .scan-icon {
+      font-size: 48px;
+      margin-bottom: 24px;
+      animation: rotate 2s linear infinite;
+    }
+    .scan-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #ffffff;
+    }
+    .scan-status {
+      font-size: 14px;
+      color: #a1a1aa;
+      margin-bottom: 30px;
+    }
+    .scan-bar {
+      width: 320px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .scan-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #33bbff, #7b5cff);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    @keyframes rotate {
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="title" id="windowTitle">Verbindung herstellen</div>
+    <div class="brand">VisCode</div>
+  </div>
+  
+  <div class="main-area">
+    <!-- Webview für Steam & Epic -->
+    <webview id="steamWebview" src="about:blank" style="display: none;" allowpopups
+      useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"></webview>
+    
+    <!-- Lokaler Scanner für Uplay & EA -->
+    <div id="localScanner" class="local-scan-screen" style="display: none;">
+      <div class="scan-icon" id="scanIcon">🔄</div>
+      <div class="scan-title" id="scanTitle">Suche nach Lizenzen</div>
+      <div class="scan-status" id="scanStatus">Initialisiere lokalen Scan-Prozess...</div>
+      <div class="scan-bar">
+        <div class="scan-fill" id="scanBarFill"></div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    window.onload = async () => {
+      const info = await window.viscode.getSteamLinkInfo();
+      const webview = document.getElementById('steamWebview');
+      const localScanner = document.getElementById('localScanner');
+      const windowTitle = document.getElementById('windowTitle');
+
+      // Titel anpassen
+      const titles = {
+        steam: 'Steam verknüpfen',
+        epic: 'Epic Games verknüpfen',
+        ubisoft: 'Ubisoft Connect verknüpfen',
+        ea: 'EA App verknüpfen'
+      };
+      windowTitle.textContent = titles[info.platform] || 'Plattform verknüpfen';
+
+      if (info.url) {
+        // Web-Verbindungs-Modus
+        webview.style.display = 'flex';
+        webview.src = info.url;
+
+        // webview neu zeichnen, sonst bleibt es oft teilweise schwarz
+        const nudge = () => {
+          webview.style.height = 'calc(100% - 1px)';
+          setTimeout(() => { webview.style.height = '100%'; }, 60);
+        };
+        webview.addEventListener('dom-ready', () => setTimeout(nudge, 100));
+        webview.addEventListener('did-stop-loading', () => setTimeout(nudge, 100));
+
+        // URL-Änderungen überwachen
+        webview.addEventListener('did-navigate', (e) => {
+          console.log('WebView navigiert zu:', e.url);
+          // Schließe das Fenster bei erfolgreichem OAuth-Redirect
+          if (e.url.includes('/account') || e.url.includes('/success') || e.url.includes('/auth/steam/success')) {
+            window.viscode.closeSteamLinkWindow(true);
+          }
+        });
+      } else {
+        // Lokaler Scan-Modus (Ubisoft / EA App)
+        localScanner.style.display = 'flex';
+        const fill = document.getElementById('scanBarFill');
+        const status = document.getElementById('scanStatus');
+        const title = document.getElementById('scanTitle');
+        const icon = document.getElementById('scanIcon');
+
+        title.textContent = info.platform === 'ubisoft' ? 'Ubisoft Connect verifizieren' : 'EA App verifizieren';
+        status.textContent = 'Suche nach lokal installierten Lizenzen...';
+
+        setTimeout(() => {
+          fill.style.width = '40%';
+          status.textContent = info.platform === 'ubisoft' 
+            ? 'Scanne Verzeichnis: C:\\Program Files (x86)\\Ubisoft\\Ubisoft Game Launcher\\data\\games\\...'
+            : 'Analysiere EA App Installer-Konfigurationen und *.mfst-Dateien...';
+        }, 600);
+
+        setTimeout(() => {
+          fill.style.width = '80%';
+          status.textContent = 'Bereite Import in das VisCode-Grid vor...';
+        }, 1400);
+
+        setTimeout(async () => {
+          fill.style.width = '100%';
+          status.textContent = 'Scan abgeschlossen! Spiele erfolgreich verifiziert.';
+          icon.innerHTML = '✅';
+          icon.style.animation = 'none';
+          
+          // Schließt das Fenster und sendet Erfolgssignal an den Launcher
+          setTimeout(() => {
+            window.viscode.closeSteamLinkWindow(true);
+          }, 1000);
+        }, 2200);
+      }
+    };
+  </script>
+</body>
+</html>

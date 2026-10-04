@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<!--
+  Vystra Launcher — public review source
+  Copyright (c) 2026 Stefan Reibnegger (Vystra)
+  License: Polyform Noncommercial 1.0.0 — no commercial use.
+-->
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' https: data:; media-src 'self' https: blob: mediastream: data: vystra-audio:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src https: wss://removed.invalid wss://removed.invalid">
+  <title>Vystra Launcher</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Gast-Modus: dezenter Hinweisstreifen ganz oben. Bewusst KEIN Popup und
+       nicht wegklickbar - der Gast soll jederzeit sehen, dass er ohne Konto
+       unterwegs ist, ohne dabei ausgebremst zu werden. Sichtbar wird der
+       Streifen ausschliesslich ueber body.gast (siehe styles.css), er liegt
+       aber immer im Dokument, damit der Knopf schon beim Start gebunden
+       werden kann. -->
+  <div class="gast-streifen" id="gastStreifen">
+    <span class="gast-streifen-text">Gast-Modus — ohne Konto. Anmelden für Freunde, Käufe und Cloud</span>
+    <button class="gast-streifen-btn" id="gastAnmeldenBtn">Anmelden</button>
+  </div>
+
+  <!-- Start-Animation: Hyperspace-Sternenfeld + Vystra-Logo (Sternenzahl/Helligkeit ~ Bewertungs-Schnitt) -->
+  <div id="startSplash" class="start-splash">
+    <canvas id="splashCanvas" class="splash-canvas"></canvas>
+    <div class="splash-inner">
+      <div class="splash-welcome" id="splashWelcome" hidden>
+        <div class="splash-welcome-av" id="splashWelcomeAv"></div>
+        <div class="splash-welcome-text" id="splashWelcomeText"></div>
+      </div>
+      <div class="splash-logo"><img src="vystra-logo.png" alt="Vystra"></div>
+      <div class="splash-word">Vystra</div>
+      <div class="splash-sub">Launcher</div>
+      <div class="splash-tagline" id="splashTagline"></div>
+    </div>
+  </div>
+
+  <!-- Login/Register Sperre (Auth Wall) -->
+  <div class="auth-wall" id="authWall" hidden>
+    <div class="auth-box">
+      <div class="logo-large">
+        <img class="logo-img-badge" src="vystra-logo.png" alt="Vystra">
+        <div class="logo-word">Vystra</div>
+      </div>
+      
+      <!-- Login Formular -->
+      <div id="authLoginForm">
+        <h2>Willkommen zurück!</h2>
+        <p>Melde dich an, um Spiele zu kaufen und zu spielen.</p>
+        <div id="oneClickLogin"></div>
+        <button class="accsw-walllink" id="authSwitchAccountsBtn" hidden>👥 Bereits angemeldete Konten</button>
+        <button class="btn-primary buy-btn oauth-btn" id="authOauthBtn">🎮 Mit Vystra anmelden</button>
+        <div class="divider">oder mit Benutzername</div>
+        <div class="field"><label>Benutzername</label><input type="text" id="authLoginUser" placeholder="Benutzername"></div>
+        <div class="field"><label>Passwort</label><input type="password" id="authLoginPass" placeholder="Passwort"></div>
+        <button class="btn-primary buy-btn" id="authLoginBtn">Anmelden</button>
+        <div class="auth-toggle">Noch kein Konto? <span id="toRegister">Jetzt registrieren</span></div>
+        <div class="divider">oder verknüpfe direkt</div>
+        <div class="auth-social">
+          <button class="social-btn steam" id="authSteamBtn">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-9.97 9.24l5.35 2.21a2.8 2.8 0 0 1 1.6-.49h.15l2.38-3.45v-.05a3.77 3.77 0 1 1 3.77 3.77h-.09l-3.4 2.43v.13a2.83 2.83 0 0 1-5.62.48l-3.83-1.58A10 10 0 1 0 12 2zm-5.7 13.94 1.23.51a2.12 2.12 0 1 0 1.16-2.76l1.27.52a1.56 1.56 0 0 1-1.2 2.88 1.55 1.55 0 0 1-2.46-1.15zm11.5-6.45a2.51 2.51 0 1 0-2.51 2.51 2.51 2.51 0 0 0 2.51-2.51zm-4.4 0a1.89 1.89 0 1 1 1.89 1.89 1.89 1.89 0 0 1-1.89-1.89z"/></svg>
+            Mit Steam
+          </button>
+          <button class="social-btn epic" id="authEpicBtn">
+            <svg class="icon" viewBox="0 0 24 24" fill-rule="evenodd" clip-rule="evenodd"><path d="M4.8 2h14.4A1.8 1.8 0 0 1 21 3.8v12.9c0 .62-.32 1.1-.9 1.39l-7.2 3.6c-.57.29-1.23.29-1.8 0l-7.2-3.6c-.58-.29-.9-.77-.9-1.39V3.8A1.8 1.8 0 0 1 4.8 2Zm4.4 4.4v11.2h6.2v-2.1h-3.9v-2.5h3.4v-2.1h-3.4V8.5h3.9V6.4H9.2Z"/></svg>
+            Mit Epic
+          </button>
+        </div>
+      </div>
+
+      <!-- Registrierungs-Formular -->
+      <div id="authRegisterForm" hidden>
+        <h2>Konto erstellen</h2>
+        <p>Registriere dein neues Vystra-Konto.</p>
+
+        <!-- Verknüpfte Profil-Box (erscheint nach Steam/Epic-Anmeldung) -->
+        <div id="authRegLinkedBox" class="linked-profile-box" hidden></div>
+
+        <div class="field"><label>Benutzername</label><input type="text" id="authRegUser" placeholder="Benutzername"></div>
+        <div class="field" id="authRegEmailField"><label>E-Mail</label><input type="email" id="authRegEmail" placeholder="deine@email.de"></div>
+        <div class="field" id="authRegBirthdateField"><label>Geburtsdatum</label><input type="date" id="authRegBirthdate"></div>
+        <div class="field" id="authRegPassField"><label>Passwort</label><input type="password" id="authRegPass" placeholder="Passwort"></div>
+        <button class="btn-primary buy-btn" id="authRegisterBtn">Registrieren & Anmelden</button>
+        <div class="divider">oder schneller mit</div>
+        <div class="auth-social">
+          <button class="social-btn steam" id="authRegSteamBtn">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-9.97 9.24l5.35 2.21a2.8 2.8 0 0 1 1.6-.49h.15l2.38-3.45v-.05a3.77 3.77 0 1 1 3.77 3.77h-.09l-3.4 2.43v.13a2.83 2.83 0 0 1-5.62.48l-3.83-1.58A10 10 0 1 0 12 2zm-5.7 13.94 1.23.51a2.12 2.12 0 1 0 1.16-2.76l1.27.52a1.56 1.56 0 0 1-1.2 2.88 1.55 1.55 0 0 1-2.46-1.15zm11.5-6.45a2.51 2.51 0 1 0-2.51 2.51 2.51 2.51 0 0 0 2.51-2.51zm-4.4 0a1.89 1.89 0 1 1 1.89 1.89 1.89 1.89 0 0 1-1.89-1.89z"/></svg>
+            Mit Steam
+          </button>
+          <button class="social-btn epic" id="authRegEpicBtn">
+            <svg class="icon" viewBox="0 0 24 24" fill-rule="evenodd" clip-rule="evenodd"><path d="M4.8 2h14.4A1.8 1.8 0 0 1 21 3.8v12.9c0 .62-.32 1.1-.9 1.39l-7.2 3.6c-.57.29-1.23.29-1.8 0l-7.2-3.6c-.58-.29-.9-.77-.9-1.39V3.8A1.8 1.8 0 0 1 4.8 2Zm4.4 4.4v11.2h6.2v-2.1h-3.9v-2.5h3.4v-2.1h-3.4V8.5h3.9V6.4H9.2Z"/></svg>
+            Mit Epic
+          </button>
+        </div>
+        <div class="auth-toggle">Bereits registriert? <span id="toLogin">Jetzt anmelden</span></div>
+      </div>
+
+      <!-- Einstieg in den Gast-Modus. Steht ausserhalb der beiden Formulare,
+           damit er auch beim Registrieren sichtbar bleibt. -->
+      <div class="gast-einstieg">
+        <button class="btn-ghost buy-btn" id="authGastBtn">Ohne Konto ausprobieren</button>
+        <div class="gast-einstieg-hinweis">Freunde, Chat, Käufe und die Vystra-Bibliothek brauchen ein Konto. Ohne Konto funktionieren Spiele-Scanner, lokale Bibliothek, Web-Apps und Musik ganz normal.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Setup Wizard (Erster Start / Bibliotheken verknüpfen) -->
+  <div class="auth-wall" id="setupWizard" hidden>
+    <div class="auth-box wizard-box">
+      <h2>Bibliotheken verknüpfen</h2>
+      <p style="margin-bottom: 20px;">Wähle aus, welche Spiele-Plattformen du im Vystra Launcher verknüpfen möchtest:</p>
+      
+      <!-- Schritt 1: Plattform-Auswahl -->
+      <div id="wizStep1">
+        <div class="wiz-options" style="display:flex; flex-direction:column; gap:10px; text-align:left;">
+          <label class="wiz-option" style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px; border:1px solid var(--border); border-radius:10px; background:#101015;">
+            <input type="checkbox" id="wizEpic" checked>
+            <div class="wiz-option-info">
+              <strong style="display:block; font-size:13.5px;">Epic Games Store</strong>
+              <span style="font-size:11.5px; color:var(--text-faint);">Scanne lokale Epic Games-Installationen</span>
+            </div>
+          </label>
+          <label class="wiz-option" style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px; border:1px solid var(--border); border-radius:10px; background:#101015;">
+            <input type="checkbox" id="wizSteam" checked>
+            <div class="wiz-option-info">
+              <strong style="display:block; font-size:13.5px;">Steam</strong>
+              <span style="font-size:11.5px; color:var(--text-faint);">Scanne installierte & im Besitz befindliche Spiele</span>
+            </div>
+          </label>
+          <label class="wiz-option" style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px; border:1px solid var(--border); border-radius:10px; background:#101015;">
+            <input type="checkbox" id="wizUbisoft" checked>
+            <div class="wiz-option-info">
+              <strong style="display:block; font-size:13.5px;">Ubisoft Connect</strong>
+              <span style="font-size:11.5px; color:var(--text-faint);">Scanne installierte Ubisoft Connect-Spiele</span>
+            </div>
+          </label>
+          <label class="wiz-option" style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px; border:1px solid var(--border); border-radius:10px; background:#101015;">
+            <input type="checkbox" id="wizEA" checked>
+            <div class="wiz-option-info">
+              <strong style="display:block; font-size:13.5px;">EA App</strong>
+              <span style="font-size:11.5px; color:var(--text-faint);">Scanne lokale EA App-Installationen</span>
+            </div>
+          </label>
+        </div>
+        <label class="wiz-option" style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px; margin-top:14px; border:1px solid var(--border); border-radius:10px; background:#101015;">
+          <input type="checkbox" id="wizPerfMode">
+          <div class="wiz-option-info">
+            <strong style="display:block; font-size:13.5px;">⚡ Performance-Modus</strong>
+            <span style="font-size:11.5px; color:var(--text-faint);">Nur das Nötigste – keine animierten Hintergründe/Effekte, schont schwächere PCs. Spiele &amp; Scans bleiben. Jederzeit in den Einstellungen änderbar.</span>
+          </div>
+        </label>
+        <button class="btn-primary buy-btn" id="wizNext1" style="margin-top:20px; width:100%;">Weiter</button>
+      </div>
+
+      <!-- Schritt 2: Steam Zugangsdaten (wird nur angezeigt, wenn Steam ausgewählt ist) -->
+      <div id="wizStep2" hidden>
+        <p style="margin-bottom: 20px;">Verknüpfe deinen Steam-Account auf unserer Website. Falls du nicht angemeldet bist, öffnet sich automatisch das Anmeldeportal.</p>
+        <button class="btn-primary buy-btn" id="wizOpenSteamWeb" style="width:100%; margin-bottom:12px;">🔗 Steam auf Website verknüpfen</button>
+        <div class="row-inline" style="display:flex; gap:10px; margin-top:20px;">
+          <button class="btn-ghost buy-btn" id="wizBack2" style="flex:1;">Zurück</button>
+          <button class="btn-primary buy-btn" id="wizNext2" style="flex:2;">Synchronisieren &amp; Weiter</button>
+        </div>
+      </div>
+
+      <!-- Schritt 3: Scan-Fortschritt -->
+      <div id="wizStep3" hidden>
+        <p style="margin-bottom: 20px;">Wir scannen jetzt deine verknüpften Plattformen...</p>
+        <div class="wiz-scanner-status" style="text-align:left; display:flex; flex-direction:column; gap:8px; background:#101015; border:1px solid var(--border); border-radius:10px; padding:14px;">
+          <div class="status-line" id="wizScanEpicStatus"><span class="dot info"></span>Scanne Epic Games...</div>
+          <div class="status-line" id="wizScanSteamStatus"><span class="dot info"></span>Scanne Steam...</div>
+          <div class="status-line" id="wizScanUbiStatus"><span class="dot info"></span>Scanne Ubisoft...</div>
+          <div class="status-line" id="wizScanEAStatus"><span class="dot info"></span>Scanne EA App...</div>
+        </div>
+        <div class="ach-bar" style="margin: 20px 0;"><div class="ach-fill" id="wizBar" style="width: 20%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Obere Leiste -->
+  <header class="topbar">
+    <!-- Schmaler Streifen ganz oben: dort laesst sich das Fenster immer ziehen, auch ueber Knoepfen -->
+    <div class="topbar-zieh"></div>
+    <div class="topbar-left">
+      <img class="logo-img-badge" src="vystra-logo.png" alt="Vystra">
+      <div class="logo-word">Vystra</div>
+      <nav class="topnav">
+        <button class="topnav-link active" data-page="entdecken">Entdecken</button>
+        <button class="topnav-link" data-page="alle">Alle Spiele</button>
+        <button class="topnav-link" data-page="bibliothek">Meine Bibliothek</button>
+        <button class="topnav-link" data-page="freunde">Freunde</button>
+        <button class="topnav-link" data-page="cloud">Cloud Gaming</button>
+        <!-- Zubehoer bleibt klickbar, zeigt aber vorerst nur "is coming". -->
+        <button class="topnav-link" id="topnavShop" data-page="shop">Zubehör<span class="topnav-coming">Coming</span></button>
+        <button class="topnav-link" data-page="einstellungen">Einstellungen</button>
+      </nav>
+    </div>
+    <div class="topbar-search">
+      <svg viewBox="0 0 24 24" class="icon"><path d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 1 0-.7.7l.3.3v.8l5 5 1.5-1.5-5-5zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/></svg>
+      <input id="searchInput" type="text" placeholder="Suche" autocomplete="off">
+    </div>
+    <button class="bg-pill" id="bgPillBtn" title="Launcher-Hintergrund anpassen">🎨</button>
+    <button class="bg-pill music-pill" id="musicPillBtn" title="Vystra Player öffnen – deine Musik">🎵</button>
+    <div class="topbar-right">
+      <div class="web-links-bar" id="webLinksBar"></div>
+      <button class="iconbtn" id="webLinksBtn" title="Meine Websites verwalten">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+      </button>
+      <button class="balance-badge" id="balanceBadge" title="Dein Vystra-Guthaben" hidden>
+        <span class="bb-coin">🪙</span><span id="balanceValue">0,00 €</span>
+      </button>
+      <button class="iconbtn" id="dailyBtn" title="Tagesbelohnung" hidden>
+        <svg viewBox="0 0 24 24" class="icon"><path d="M20 7h-2.2a3 3 0 0 0 .2-1 3 3 0 0 0-5.3-1.9L12 4.6l-.7-.5A3 3 0 0 0 6 6a3 3 0 0 0 .2 1H4a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h1v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7h1a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zm-5-2a1 1 0 1 1 0 2h-1.6l.8-1.2A1 1 0 0 1 15 5zM9 5a1 1 0 0 1 .8.4l.8 1.6H9a1 1 0 0 1 0-2zm2 14H7v-7h4v7zm6 0h-4v-7h4v7z"/></svg>
+        <span class="daily-dot" id="dailyDot" hidden></span>
+      </button>
+      <button class="iconbtn" id="dlHeadBtn" title="Downloads">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M12 3v10.6l3.3-3.3 1.4 1.4L12 17.4l-4.7-5.7 1.4-1.4L12 13.6V3zM5 19h14v2H5z"/></svg>
+        <span class="cart-badge dl-head-badge" id="dlHeadBadge" hidden>0</span>
+      </button>
+      <button class="iconbtn" id="cartBtn" title="Warenkorb">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7.2 14h9.9c.75 0 1.4-.4 1.75-1.03L22.4 6.6A1 1 0 0 0 21.5 5H6.2l-.94-2H2v2h2l3.6 7.6-1.35 2.44C5.5 16.37 6.3 18 7.8 18h12v-2H8.1l1.1-2z"/></svg>
+        <span class="cart-badge" id="cartBadge" hidden>0</span>
+      </button>
+      <button class="iconbtn" id="languageBtn" title="Sprache">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm7 9h-3a15 15 0 0 0-1.2-5.1A8 8 0 0 1 19 11zM12 4c.9 1.2 1.7 3.4 1.95 7h-3.9C10.3 7.4 11.1 5.2 12 4zM5 13h3c.15 1.9.55 3.6 1.2 5.1A8 8 0 0 1 5 13zm3-2H5a8 8 0 0 1 4.2-5.1A15 15 0 0 0 8 11zm4 9c-.9-1.2-1.7-3.4-1.95-7h3.9c-.25 3.6-1.05 5.8-1.95 7zm2.8-1.9c.65-1.5 1.05-3.2 1.2-5.1h3a8 8 0 0 1-4.2 5.1z"/></svg>
+      </button>
+      <button class="avatar" id="avatarBtn" title="Konto">
+        <span id="avatarLetter">?</span>
+        <span class="avatar-dot" id="avatarDot" hidden></span>
+      </button>
+    </div>
+    <!-- Fensterknoepfe: das Fenster ist rahmenlos (sonst funktioniert das Glas nicht) -->
+    <div class="win-ctrls">
+      <button class="win-ctrl" id="winMinBtn" title="Minimieren" type="button">
+        <svg viewBox="0 0 10 10"><path d="M0 5h10" /></svg>
+      </button>
+      <button class="win-ctrl" id="winMaxBtn" title="Maximieren" type="button">
+        <svg viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" /></svg>
+      </button>
+      <button class="win-ctrl win-close" id="winCloseBtn" title="Schließen" type="button">
+        <svg viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10" /></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Linke Seitenleiste -->
+    <aside class="sidebar" id="sidebar">
+      <h1 class="sidebar-title" id="sidebarTitle">Entdecken</h1>
+      <div id="sidebarContent"></div>
+    </aside>
+
+    <!-- Hauptinhalt -->
+    <main class="content" id="content"></main>
+  </div>
+
+  <!-- Warenkorb-Drawer -->
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="cart-drawer" id="cartDrawer" hidden>
+    <div class="cart-head">
+      <h2>Warenkorb</h2>
+      <button class="iconbtn" id="cartCloseBtn">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
+      </button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-foot" id="cartFoot"></div>
+  </aside>
+
+  <!-- Download-Manager-Drawer (Epic-Stil) -->
+  <aside class="dl-drawer" id="downloadDrawer" hidden>
+    <div class="dl-drawer-head">
+      <h2>Downloads</h2>
+      <button class="iconbtn" id="dlCloseBtn">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
+      </button>
+    </div>
+    <div class="dl-drawer-body">
+      <nav class="dl-nav" id="dlNav">
+        <button class="dl-nav-item active" data-dltab="overview"><span>Übersicht</span><span class="dl-nav-count">0</span></button>
+        <button class="dl-nav-item" data-dltab="recent"><span>Kürzlich</span><span class="dl-nav-count">0</span></button>
+        <button class="dl-nav-item" data-dltab="settings"><span>Download-Einstellungen</span></button>
+      </nav>
+      <div class="dl-main" id="dlMain"></div>
+    </div>
+  </aside>
+
+  <!-- Altersverifikation-Modal (18+) -->
+  <div class="age-gate-backdrop" id="ageGateBackdrop" hidden></div>
+  <div class="age-gate-modal" id="ageGateModal" hidden>
+    <div class="age-gate-icon">🔞</div>
+    <h2 id="ageGateTitle"></h2>
+    <p id="ageGateText"></p>
+    <div class="age-gate-notes" id="ageGateNotes" hidden></div>
+    <div class="age-gate-actions" id="ageGateActions"></div>
+  </div>
+
+  <!-- Cloud Gaming: Vollflächiges Overlay über dem ganzen Launcher -->
+  <div class="cloud-overlay" id="cloudOverlay" hidden>
+    <!-- Landing: fetter Text + Logo, Klick startet die Sitzung -->
+    <div class="cloud-landing" id="cloudLanding">
+      <button class="cloud-back" id="cloudBackTop" hidden>
+        <svg viewBox="0 0 24 24" class="icon"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg>
+        <span>Zurück</span>
+      </button>
+      <div class="cloud-launch" id="cloudLaunchBtn">
+        <div class="cloud-logo">
+          <svg viewBox="0 0 48 48" width="72" height="72"><path fill="#76b900" d="M8 18c6-6 20-8 32-2-10-2-20 0-26 6-3 3-4 7-2 10 1-6 8-11 16-11-9 2-15 8-15 15 0 0-9-14-5-24z"/></svg>
+        </div>
+        <div class="cloud-title">Starte NVIDIA Cloud Gaming</div>
+        <div class="cloud-url">https://play.geforcenow.com/mall/#/layout/games</div>
+        <div class="cloud-hint">Im Vollbild: <b>ESC 5 Sekunden gedrückt halten</b>, um das Vollbild zu beenden.</div>
+      </div>
+    </div>
+
+    <!-- Aktive Sitzung: eingebettete GeForce-NOW-Seite -->
+      <div class="cloud-session" id="cloudSession" hidden>
+      <div id="cloudWebviewHost" class="cloud-webview-host"></div>
+
+      <!-- Unsichtbare Hotzone am oberen Rand: blendet die Steuerleiste ein -->
+      <div class="cloud-hotzone" id="cloudHotzone"></div>
+
+      <!-- Steuerleiste (erscheint, wenn die Maus ganz oben ist) -->
+      <div class="cloud-topbar" id="cloudTopbar">
+        <button class="cloud-tb-btn" id="cloudBarBack">
+          <svg viewBox="0 0 24 24" class="icon"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg>
+          <span>Zurück</span>
+        </button>
+        <div class="cloud-tb-title">
+          <svg viewBox="0 0 48 48" width="20" height="20"><path fill="#76b900" d="M8 18c6-6 20-8 32-2-10-2-20 0-26 6-3 3-4 7-2 10 1-6 8-11 16-11-9 2-15 8-15 15 0 0-9-14-5-24z"/></svg>
+          NVIDIA Cloud Gaming
+        </div>
+        <button class="cloud-tb-btn" id="cloudBarFullscreen">
+          <span id="cloudBarFsLabel">Vollbild beenden</span>
+          <svg viewBox="0 0 24 24" class="icon"><path d="M6 14H4v6h6v-2H6v-4zm-2-4h2V6h4V4H4v6zm14 8h-4v2h6v-6h-2v4zM14 4v2h4v4h2V4h-6z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Web-Ansicht im Launcher (z. B. Herausgeberinformationen) -->
+  <div class="web-overlay" id="webOverlay" hidden>
+    <div class="web-topbar">
+      <button class="cloud-tb-btn" id="webBack">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg>
+        <span>Zurück</span>
+      </button>
+      <div class="cloud-tb-title" id="webTitle">Herausgeberinformationen</div>
+      <button class="cloud-tb-btn" id="webRight" hidden><span id="webRightLabel">Andere</span></button>
+    </div>
+    <div id="webOverlayViewHost" class="web-overlay-view-host"></div>
+
+  <!-- Verstecktes Webview: erkennt beim Hinzufügen automatisch Titel + Favicon einer URL -->
+  <div id="metaFetchViewHost" hidden></div>
+  </div>
+
+  <!-- Installations-Dialog (Datenträger-Auswahl) -->
+  <div class="install-backdrop" id="installBackdrop" hidden></div>
+  <div class="install-modal" id="installModal" hidden>
+    <div class="install-head">
+      <h2>Installieren</h2>
+      <button class="iconbtn" id="installClose">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
+      </button>
+    </div>
+    <div class="install-game" id="installGameInfo"></div>
+    <div class="install-disks-label">Installieren in:</div>
+    <div class="install-disks" id="installDisks"></div>
+    <div class="install-note" id="installNote"></div>
+    <div class="install-actions">
+      <button class="btn-primary" id="installConfirm">Installieren</button>
+      <button class="btn-ghost" id="installCancel">Abbrechen</button>
+    </div>
+  </div>
+
+  <!-- Toast-Meldungen -->
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- Sprach-Dropdown (Einträge werden per JS aus LANGUAGES gefüllt) -->
+  <div class="dropdown-menu" id="languageDropdown" hidden></div>
+
+  <!-- Meine Websites / Kategorien (Inhalt wird per JS gefüllt) -->
+  <div class="dropdown-menu weblinks-dropdown" id="webLinksDropdown" hidden></div>
+
+  <!-- Konto-Dropdown -->
+  <div class="dropdown-menu" id="accountDropdown" hidden>
+    <div class="dropdown-header" id="dropdownUserHeader">Nicht angemeldet</div>
+    <div class="dropdown-scroll">
+      <button class="dropdown-item" id="dropdownSettingsBtn">⚙️ Account Einstellungen</button>
+      <button class="dropdown-item" id="dropdownChatBtn">💬 Chat &amp; Freunde</button>
+      <button class="dropdown-item" id="dropdownRedeemBtn">🎟️ Key einlösen</button>
+      <button class="dropdown-item" id="dropdownPurchasesBtn">🧾 Käufe &amp; Rechnungen</button>
+      <button class="dropdown-item" id="dropdownFamilyBtn">👪 Family (Bibliothek teilen)</button>
+      <button class="dropdown-item" id="dropdownCreditsBtn">🏆 Credits (Steam, Epic, Vystra)</button>
+      <button class="dropdown-item" id="dropdownAgbBtn">📄 AGBs</button>
+      <hr class="dropdown-divider">
+      <div class="dropdown-subheader">Verknüpfte Konten</div>
+      <div id="dropdownLinkedAccounts" class="dropdown-friends-list"></div>
+      <hr class="dropdown-divider">
+      <div class="dropdown-subheader">Konto wechseln</div>
+      <button class="dropdown-item" id="dropdownSwitchBtn">🔄 Schnellwechsel (Karussell)</button>
+      <div id="quickAccountsList" class="dropdown-accounts-list">
+        <div class="dropdown-item-disabled">Keine gespeicherten Konten</div>
+      </div>
+    </div>
+    <div class="dropdown-footer">
+      <button class="dropdown-item" id="dropdownAddAccountBtn">➕ Konto hinzufügen</button>
+      <button class="dropdown-item danger" id="dropdownLogoutBtn">🚪 Abmelden</button>
+    </div>
+  </div>
+
+  <!-- Credits Modal -->
+  <div class="modal-backdrop" id="creditsBackdrop" hidden></div>
+  <div class="custom-modal" id="creditsModal" hidden>
+    <h2>🏆 Credits &amp; Lizenzen</h2>
+    <div class="modal-body scrollable">
+      <p>Der <b>Vystra Launcher</b> wurde mit folgenden Technologien und Datenquellen realisiert:</p>
+      <ul>
+        <li><b>Steam Integration:</b> Ermöglicht durch die offizielle Steam Web-API, Valve-Registry-Verweise und das Steam-Client-Konsolenprotokoll (steam://).</li>
+        <li><b>Epic Games Integration:</b> Realisiert durch das Auslesen lokaler JSON-Manifeste und die Epic Store Catalog API.</li>
+        <li><b>Ubisoft Connect:</b> Lokale Lizenz-Verifizierung über Registry- und Spieldatenabgleiche.</li>
+        <li><b>EA App:</b> Scannung lokaler EA Desktop InstallerConfigs und .mfst-Dateien.</li>
+        <li><b>Framework:</b> Electron, Node.js und Google Studio Web APIs.</li>
+      </ul>
+      <h3 style="margin-top:16px">Genutzte Websites &amp; Datenquellen</h3>
+      <ul class="credits-sites">
+        <li><b>Vystra Server</b> — removed.invalid <span class="credits-use">(Konto, Spiele, Käufe, Freunde, Presence)</span></li>
+        <li><b>Steam</b> — api.steampowered.com · steamcommunity.com · store.steampowered.com · steamstatic.com <span class="credits-use">(Besitz, Freunde, Bilder, Store)</span></li>
+        <li><b>Epic Games</b> — graphql.epicgames.com · *.epicgames.com (catalog/library/account/friends) <span class="credits-use">(Bibliothek, Store, Freunde)</span></li>
+        <li><b>Xbox / Microsoft</b> — xboxlive.com (peoplehub, titlehub) <span class="credits-use">(Profil, Freunde, Spiele)</span></li>
+        <li><b>GamerPower</b> — gamerpower.com/api <span class="credits-use">(Gratis-Aktionen &amp; Giveaways)</span></li>
+        <li><b>Tenor</b> — tenor.com · tenor.googleapis.com <span class="credits-use">(GIF-Memes für Profilbild &amp; Banner)</span></li>
+        <li><b>NVIDIA GeForce NOW</b> — play.geforcenow.com <span class="credits-use">(Cloud Gaming)</span></li>
+        <li><b>GitHub</b> — github.com/Stefan2010byte/viscode-launcher <span class="credits-use">(Auto-Updates / Releases)</span></li>
+      </ul>
+      <p style="font-size:12px;opacity:.8">Marken &amp; Logos gehören ihren jeweiligen Eigentümern. Vystra steht in keiner offiziellen Verbindung zu diesen Anbietern.</p>
+      <p>Besonderer Dank gilt der Community für das Feedback und den Open-Source-Beiträgen!</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="creditsCloseBtn">Schließen</button>
+    </div>
+  </div>
+
+  <!-- AGB Modal -->
+  <div class="modal-backdrop" id="agbBackdrop" hidden></div>
+  <div class="custom-modal" id="agbModal" hidden>
+    <h2>📄 Allgemeine Geschäftsbedingungen (AGB)</h2>
+    <div class="modal-body scrollable">
+      <h3>1. Geltungsbereich</h3>
+      <p>Diese AGB regeln die Nutzung der Vystra Launcher Software. Mit der Nutzung des Launchers erklärst du dich mit diesen Richtlinien einverstanden.</p>
+      <h3>2. Datennutzung &amp; Synchronisation</h3>
+      <p>Der Launcher verarbeitet Spieldaten von Drittanbieter-Plattformen (Steam, Epic Games, Ubisoft Connect, EA App) lokal auf deinem PC. Plattform-Keys (z. B. SteamID64) werden nur zur Authentifizierung mit deinem Vystra-Account synchronisiert und sicher verarbeitet.</p>
+      <h3>3. Haftungsausschluss</h3>
+      <p>Vystra steht in keiner offiziellen Verbindung zu Valve Corp., Epic Games Inc., Ubisoft oder Electronic Arts. Wir haften nicht für Probleme, die durch die Client-Software der Drittanbieter entstehen.</p>
+      <h3>4. Updates und Änderungen</h3>
+      <p>Der Launcher wird stetig weiterentwickelt. Updates werden automatisch bereitgestellt, um die Funktionalität zu sichern.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="agbCloseBtn">Schließen</button>
+    </div>
+  </div>
+
+  <!-- Logout Bestätigung Dialog -->
+  <div class="modal-backdrop" id="logoutConfirmBackdrop" hidden></div>
+  <div class="custom-modal confirmation-modal" id="logoutConfirmModal" hidden>
+    <h2>🚪 Abmelden</h2>
+    <p>Möchtest du dich wirklich aus deinem Vystra-Konto abmelden?</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="logoutCancelBtn">Abbrechen</button>
+      <button class="btn-danger" id="logoutConfirmBtn">Ja, abmelden</button>
+    </div>
+  </div>
+
+  <!-- App Version unten rechts -->
+  <div class="app-version" id="appVersion">v1.0.0</div>
+
+  <div id="perfFreeze" aria-hidden="true">
+    <div class="perf-freeze-hint">Wird geladen …</div>
+  </div>
+
+  <script src="hls.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

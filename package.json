@@ -1,0 +1,36 @@
+{
+  "name": "vystra-launcher",
+  "version": "2.3.2",
+  "description": "Vystra Launcher – public review source (non-commercial). Official binaries are separate.",
+  "main": "main.js",
+  "author": "Stefan Reibnegger (Vystra)",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://vystra.games",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Stefan2010byte/vystra-launcher-source.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable",
+    "dist:linux": "electron-builder --linux AppImage deb"
+  },
+  "devDependencies": {
+    "electron": "^31.3.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.vystra.launcher.review",
+    "productName": "Vystra Launcher Review Source",
+    "copyright": "© 2026 Stefan Reibnegger (Vystra)",
+    "win": {
+      "target": "portable"
+    }
+  },
+  "dependencies": {
+    "hls.js": "^1.6.16",
+    "koffi": "^3.3.2",
+    "sql.js": "^1.14.2",
+    "ws": "^8.21.0"
+  }
+}
