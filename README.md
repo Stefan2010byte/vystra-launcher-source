@@ -1,19 +1,33 @@
-# Vystra Launcher — öffentliche Prüf-Quelle
+# Vystra Launcher — öffentliche Quelle
 
 **Autor:** Stefan Reibnegger (Vystra)  
-**Lizenz:** [Polyform Noncommercial 1.0.0](LICENSE) — **keine kommerzielle Nutzung**  
-**Offizielle Downloads:** [Releases (viscode-launcher)](https://github.com/Stefan2010byte/viscode-launcher) · [vystra.games](https://vystra.games)
+**Lizenz:** [Functional Source License 1.1](LICENSE) (FSL-1.1-ALv2) — nach zwei Jahren Apache 2.0  
+**Offizielle Downloads:** [Releases (viscode-launcher)](https://github.com/Stefan2010byte/viscode-launcher) · [vystra.games](https://vystra.games)  
+**API-Doku für Modder:** [docs/](docs/README.md)
 
-Dieses Repository ist **source-available**, nicht „Open Source“ im OSI-Sinn.  
-Du darfst den Code **lesen**, um zu prüfen, dass der Launcher kein Virus ist.  
-Du darfst ihn **nicht** für eigene kommerzielle Launcher, Shops oder Kopien nutzen.
+Dieses Repository ist **source-available** unter FSL, nicht „Open Source“ im OSI-Sinn
+(erst nach zwei Jahren wird es Apache 2.0).  
+Du darfst den Code **lesen**, **lernen**, **ändern** und **Mods** bauen.  
+Du darfst **keinen** konkurrierenden kommerziellen Launcher, Shop oder Klon verkaufen.
+
+## Für die Modder-Community
+
+Die API-Verträge sind wieder öffentlich, damit ihr Plugins, Themes, Tools und
+Spiel-Brücken bauen könnt:
+
+- [docs/README.md](docs/README.md) — Übersicht
+- [docs/API-UEBERSICHT.md](docs/API-UEBERSICHT.md) — REST-Server
+- [docs/API_LAUNCHER_KOMPLETT.md](docs/API_LAUNCHER_KOMPLETT.md) — Server + Fremdhosts + lokale IPC
+- [docs/MODDING.md](docs/MODDING.md) — `window.viscode` (Renderer ↔ Hauptprozess)
+
+Shop-Kauf, Wallet und Login sind in **dieser** Code-Kopie weiterhin nur als
+Schnittstelle dokumentiert, nicht als fertiger Server zum Nachbauen.
 
 ## Warum das hier öffentlich ist
 
 Viele Windows-Nutzer sehen bei unsignierten `.exe`-Dateien die Warnung
-„unbekannter Herausgeber“ / SmartScreen. Ein bezahltes Authenticode-Zertifikat
-ist etwas anderes als Quelltext. Solange die offiziellen Builds das nicht haben,
-ist **lesbarer Quelltext** der ehrlichste Vertrauensbeweis:
+„unbekannter Herausgeber“ / SmartScreen. Lesbarer Quelltext ist der
+ehrlichste Vertrauensbeweis:
 
 - kein versteckter Keylogger
 - kein Miner
@@ -25,29 +39,16 @@ Die **fertigen Installer** kommen nur von:
 - https://github.com/Stefan2010byte/viscode-launcher/releases
 - https://vystra.games
 
-## Was in dieser Kopie bewusst fehlt
+## Lizenz — kurz (FSL)
 
-Damit niemand den **Vystra-Server**, Konten oder den eigenen Shop angreifen
-oder nachbauen kann, ist diese Fassung **beschnitten**:
+Erlaubt: lesen, lernen, Mods, interne Nutzung, Bildung, Forschung,
+Dienstleistungen für einen Lizenznehmer.  
+Verboten: ein kommerzielles Produkt, das den Vystra Launcher, den Shop
+oder eine wesentlich gleiche Funktion ersetzt.
 
-- alle Adressen und Aufrufe zu den **Vystra-eigenen Servern** sind entfernt
-- der **eigene Vystra-Shop** (Kauf, Wallet, Server-Bibliothek, Konto-API) ist entfernt
-- interne API-Dokumente, Anti-Crack-Notizen und Website-Backends sind **nicht** enthalten
-- eingebaute Drittschlüssel (z. B. Steam-Web-API) sind **leer**
-
-Steam / Epic / Xbox **öffentliche** Store-Seiten und der **lokale** Bibliotheks-Scanner
-bleiben sichtbar, damit man die Desktop-App nachvollziehen kann.
-
-Diese Kopie ist **kein vollständiger Klon** der Verkaufsversion und startet
-ohne Vystra-Backend nicht als fertiger Store.
-
-## Lizenz — kurz
-
-Erlaubt: lesen, lernen, Sicherheitsprüfung, privates Hobby **ohne** Geschäftsabsicht.  
-Verboten: Verkauf, eigener Store, White-Label, SaaS, Werbung damit verdienen,
-Weitergabe als eigenes Produkt.
-
-Siehe [LICENSE](LICENSE) und [NOTICE](NOTICE).
+Nach zwei Jahren gilt zusätzlich Apache 2.0.  
+Siehe [LICENSE](LICENSE) und [NOTICE](NOTICE).  
+Lizenztext: [fsl.software](https://fsl.software/)
 
 ## Autor / Signatur im Code
 

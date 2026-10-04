@@ -17,10 +17,11 @@ Du kannst selbst nachlesen:
 
 - Fenster, Glas-Effekt, Bibliothek, lokale Scanner
 - keine versteckte Payload in den hier liegenden Dateien
-- Vystra-Server und der eigene Shop sind in **dieser** Kopie nicht enthalten
+- die API-Verträge in [docs/](docs/README.md)
 
-Die Verkaufsversion spricht mit einem privaten Backend. Dieses Backend,
-seine URLs, Schlüssel und Protokolle sind hier **absichtlich nicht** dabei.
+Die Verkaufsversion spricht mit einem privaten Backend. Login, Shop und
+Wallet sind in **dieser** Code-Kopie absichtlich nicht als fertiger Server
+enthalten. Die Doku beschreibt die Verträge für Mods und Integrationen.
 
 ## Fund einer Schwachstelle
 

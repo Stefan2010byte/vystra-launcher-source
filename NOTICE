@@ -1,4 +1,4 @@
-Required Notice: Copyright (c) 2026 Stefan Reibnegger (Vystra)
+Copyright 2026 Stefan Reibnegger (Vystra)
 
 Vystra Launcher
 Author / Autor: Stefan Reibnegger
@@ -6,12 +6,17 @@ Project: Vystra
 Official website: https://vystra.games
 Official binaries / Releases: https://github.com/Stefan2010byte/viscode-launcher
 
-This public tree is a SOURCE-AVAILABLE review copy.
-It is NOT OSI “Open Source”. Commercial use is forbidden
-(Polyform Noncommercial 1.0.0 — see LICENSE).
+This public tree is source-available under the
+Functional Source License 1.1 (Apache-2.0 future license).
+See LICENSE (FSL-1.1-ALv2). It is not OSI “Open Source”
+until the two-year change license takes effect.
 
-Do not use this code to build a competing launcher, shop,
-or any commercial product. Private study and security review
-are the intended uses.
+You may read, learn, modify, and build mods.
+You may not ship a competing commercial launcher, shop,
+or substantially similar product.
+
+API contracts for the modder community live in docs/.
+The live shop/auth implementation in this copy remains stubbed
+so the production backend is not a drop-in clone.
 
 Signed in source by Stefan Reibnegger, 2026.

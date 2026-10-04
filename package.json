@@ -1,10 +1,10 @@
 {
   "name": "vystra-launcher",
   "version": "2.3.2",
-  "description": "Vystra Launcher – public review source (non-commercial). Official binaries are separate.",
+  "description": "Vystra Launcher – public source (FSL-1.1-ALv2) with API docs for modders. Official binaries are separate.",
   "main": "main.js",
   "author": "Stefan Reibnegger (Vystra)",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "FSL-1.1-ALv2",
   "homepage": "https://vystra.games",
   "repository": {
     "type": "git",

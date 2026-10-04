@@ -2,12 +2,22 @@
 
 Copyright (c) 2026 Stefan Reibnegger (Vystra)
 
-Dieses Repository ist eine **Prüf-Quelle**, kein Community-Fork-Projekt
-für einen zweiten Store.
+Lizenz: Functional Source License 1.1 (siehe [LICENSE](LICENSE)).
 
-- Sicherheitsfunde am **Live-System** bitte privat an Stefan Reibnegger
-  (Kontakt auf https://vystra.games), nicht als fertigen Angriff.
-- Pull Requests, die den entfernten Server oder den eigenen Shop
-  wiederherstellen, werden nicht angenommen.
-- Kommerzielle Nutzung und das Veröffentlichen eines eigenen Launchers
-  auf Basis dieses Codes sind durch die LICENSE untersagt.
+Dieses Repository ist die öffentliche Quelle plus **API-Doku für Modder**.
+Kein zweiter kommerzieller Store.
+
+Willkommen:
+
+- Mods, Themes, Tools, die FSL einhalten
+- Korrekturen an der [API-Doku](docs/README.md)
+- Sicherheitsfunde (privat, nicht als fertigen Angriff)
+
+Nicht willkommen:
+
+- Pull Requests, die einen konkurrierenden Shop oder White-Label-Launcher
+  als Produkt ausliefern
+- das Entfernen der Copyright-Hinweise von Stefan Reibnegger
+
+Sicherheitsfunde am **Live-System** bitte privat an Stefan Reibnegger
+(Kontakt auf https://vystra.games).

@@ -1,5 +1,5 @@
 # Vystra Launcher — Copyright (c) 2026 Stefan Reibnegger (Vystra)
-# Polyform Noncommercial 1.0.0 — commercial use forbidden.
+# FSL-1.1-ALv2 (Functional Source License) — no competing commercial product.
 # Oeffnet einen fremden Launcher, sucht die Woerter/Knoepfe (Bibliothek / Library),
 # klickt sie und legt danach ein Koordinatenraster ueber das Fenster. An jedem
 # Rasterpunkt wird der UI-Name gelesen - so landen die Kacheln in der Liste,

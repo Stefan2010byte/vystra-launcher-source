@@ -2,7 +2,7 @@
  * Vystra Launcher — public review source
  * Copyright (c) 2026 Stefan Reibnegger (Vystra)
  * Author: Stefan Reibnegger
- * License: Polyform Noncommercial 1.0.0 — commercial use is forbidden.
+ * License: FSL-1.1-ALv2 (Functional Source License) — no competing commercial product.
  */
 'use strict';
 
