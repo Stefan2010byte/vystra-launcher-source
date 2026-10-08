@@ -812,18 +812,26 @@ function watermarkHeaders(_0x144081, _0x32356b) {
     return {};
   }
 }
+function parseVersionPart(_0xpart) {
+  const _0xm = String(_0xpart || "").match(/^(\d+)(?:-?([a-zA-Z]+))?$/);
+  if (!_0xm) {
+    return { n: parseInt(_0xpart, 10) || 0, l: "" };
+  }
+  return { n: parseInt(_0xm[1], 10) || 0, l: (_0xm[2] || "").toLowerCase() };
+}
 function compareVersions(_0x29ee6d, _0x3eb3f9) {
-  const _0x2da2d4 = String(_0x29ee6d || "0").split(".").map(_0x159a7e => parseInt(_0x159a7e, 10) || 0);
-  const _0x2a652d = String(_0x3eb3f9 || "0").split(".").map(_0x2d608c => parseInt(_0x2d608c, 10) || 0);
+  const _0x2da2d4 = String(_0x29ee6d || "0").split(".").map(parseVersionPart);
+  const _0x2a652d = String(_0x3eb3f9 || "0").split(".").map(parseVersionPart);
   for (let _0xdc6c59 = 0; _0xdc6c59 < Math.max(_0x2da2d4.length, _0x2a652d.length); _0xdc6c59++) {
-    const _0x26fdee = _0x2da2d4[_0xdc6c59] || 0;
-    const _0x3f90c4 = _0x2a652d[_0xdc6c59] || 0;
-    if (_0x26fdee > _0x3f90c4) {
-      return 1;
-    }
-    if (_0x26fdee < _0x3f90c4) {
-      return -1;
-    }
+    const _0x26fdee = _0x2da2d4[_0xdc6c59] || { n: 0, l: "" };
+    const _0x3f90c4 = _0x2a652d[_0xdc6c59] || { n: 0, l: "" };
+    if (_0x26fdee.n > _0x3f90c4.n) return 1;
+    if (_0x26fdee.n < _0x3f90c4.n) return -1;
+    if (_0x26fdee.l === _0x3f90c4.l) continue;
+    if (!_0x26fdee.l) return -1;
+    if (!_0x3f90c4.l) return 1;
+    if (_0x26fdee.l > _0x3f90c4.l) return 1;
+    return -1;
   }
   return 0;
 }
