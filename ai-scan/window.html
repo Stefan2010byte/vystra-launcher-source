@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Vystra AI-Scan</title>
+  <link rel="stylesheet" href="window.css">
+</head>
+<body>
+  <header class="bar">
+    <div>
+      <div class="brand">Vystra AI-Scan</div>
+      <div class="sub" id="now">Warte …</div>
+    </div>
+    <div class="acts">
+      <button id="startBtn" type="button">Start</button>
+      <button id="stopBtn" type="button" class="ghost">Stop</button>
+    </div>
+  </header>
+  <main>
+    <section class="view">
+      <div class="view-hd">Bild + Koordinatensystem</div>
+      <div class="canvas-wrap">
+        <img id="shot" alt="">
+        <canvas id="grid"></canvas>
+      </div>
+    </section>
+    <aside>
+      <div class="view-hd">Ablauf</div>
+      <div class="log" id="log"></div>
+      <div class="view-hd">Eingetragen</div>
+      <div class="games" id="games">Noch keine Spiele.</div>
+    </aside>
+  </main>
+  <div id="err" class="err" hidden></div>
+  <script src="window.js"></script>
+</body>
+</html>

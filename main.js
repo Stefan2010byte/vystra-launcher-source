@@ -53,7 +53,12 @@ try {
 }
 // Rein lokaler Multi-Launcher-Scanner (eigene Datei, keine Electron-Abhängigkeit).
 const launcherScan = require("./launcherscan");
-const aiScanEngine = require("./ai-scan/engine");
+let aiScanEngine = null;
+try {
+  aiScanEngine = require("./ai-scan/engine");
+} catch (_0xaiLoad) {
+  aiScanEngine = { register() {} };
+}
 let _xboxScannerInst = null;
 function xboxScanner() {
   if (!_xboxScannerInst) {
@@ -17658,7 +17663,7 @@ if (!gotSingleLock) {
     initWatermarkHwid();
     registerIpc();
     try {
-      aiScanEngine.register({
+      if (aiScanEngine && typeof aiScanEngine.register === "function") aiScanEngine.register({
         ipcMain,
         BrowserWindow,
         app,
