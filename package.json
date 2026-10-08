@@ -1,6 +1,6 @@
 {
   "name": "vystra-launcher",
-  "version": "2.3.3",
+  "version": "2.3.2a",
   "description": "Vystra Launcher – public source (FSL-1.1-ALv2) with API docs for modders. Official binaries are separate.",
   "main": "main.js",
   "author": "Stefan Reibnegger (Vystra)",
