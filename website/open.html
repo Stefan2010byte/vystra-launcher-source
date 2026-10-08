@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VisCode Launcher – Spiel öffnen</title>
+<style>
+  :root { --bg:#0e0e12; --card:#17171f; --line:#26262f; --text:#eceef4; --faint:#9aa0ad; --accent:#785aff; }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; min-height:100vh; background:radial-gradient(1200px 600px at 50% -10%, #1c1830 0%, var(--bg) 60%);
+    color:var(--text); font-family:'Segoe UI',system-ui,sans-serif;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .card {
+    width:100%; max-width:460px; background:var(--card); border:1px solid var(--line);
+    border-radius:18px; padding:26px; text-align:center; box-shadow:0 24px 70px rgba(0,0,0,.5);
+  }
+  .cover {
+    width:150px; aspect-ratio:3/4; object-fit:cover; border-radius:12px; margin:0 auto 16px;
+    display:block; background:#20202a; box-shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .sub { color:var(--faint); font-size:13px; margin:0 0 22px; }
+  .btn {
+    display:block; width:100%; padding:13px 18px; border-radius:11px; border:none; cursor:pointer;
+    font-size:15px; font-weight:800; text-decoration:none; margin-bottom:10px; transition:transform .1s, filter .15s;
+  }
+  .btn:active { transform:translateY(1px); }
+  .btn.primary { background:linear-gradient(135deg,#8a6bff,#6b4dff); color:#fff; }
+  .btn.primary:hover { filter:brightness(1.08); }
+  .btn.ghost { background:transparent; color:var(--faint); border:1px solid var(--line); font-weight:700; font-size:13px; }
+  .btn.ghost:hover { color:var(--text); border-color:var(--accent); }
+  .hint { color:var(--faint); font-size:11.5px; margin-top:14px; line-height:1.5; }
+  .badge { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase;
+    color:#b9a6ff; background:rgba(120,90,255,.14); padding:3px 10px; border-radius:999px; margin-bottom:14px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">VisCode Launcher</div>
+    <img id="cover" class="cover" alt="" style="display:none">
+    <h1 id="title">Spiel wird geöffnet …</h1>
+    <p class="sub" id="sub">Der VisCode Launcher startet gleich.</p>
+    <a class="btn primary" id="openBtn" href="#">▶ Im VisCode Launcher öffnen</a>
+    <a class="btn ghost" id="dlBtn" href="https://github.com/Stefan2010byte/viscode-launcher/releases/latest/download/VisCode-Launcher-Setup.exe">Launcher noch nicht installiert? Herunterladen</a>
+    <p class="hint">Öffnet sich nichts, klick oben auf „Im VisCode Launcher öffnen".<br>Der Link funktioniert nur mit installiertem VisCode Launcher.</p>
+  </div>
+
+<script>
+  // ====== Konfiguration ======
+  var API_BASE = 'https://api.vis-code.com'; // Server-API für VisCode-Spielinfos
+  // ===========================
+
+  // Ziel aus URL lesen: ?g=<platform>/<id>  ODER  Pfad /g/<platform>/<id>
+  function parseTarget() {
+    var raw = new URLSearchParams(location.search).get('g');
+    if (!raw && location.pathname.indexOf('/g/') !== -1) {
+      raw = location.pathname.replace(/^.*\/g\//, ''); // Pfad-Fallback nur bei echtem /g/
+    }
+    if (!raw) return null;
+    raw = decodeURIComponent(raw.replace(/^\/+|\/+$/g, ''));
+    var parts = raw.split('/').filter(Boolean);
+    if (parts.length >= 2) return { platform: parts[0], id: parts.slice(1).join('/') };
+    if (parts.length === 1) return { platform: 'viscode', id: parts[0] };
+    return null;
+  }
+
+  var t = parseTarget();
+  var deepLink = t ? ('viscode://game/' + encodeURIComponent(t.platform) + '/' + encodeURIComponent(t.id)) : null;
+  var openBtn = document.getElementById('openBtn');
+
+  if (!t) {
+    document.getElementById('title').textContent = 'Ungültiger Link';
+    document.getElementById('sub').textContent = 'Diesem Link fehlt das Spiel.';
+    openBtn.style.display = 'none';
+  } else {
+    openBtn.href = deepLink;
+    // Launcher automatisch starten
+    setTimeout(function () { location.href = deepLink; }, 500);
+
+    // Für VisCode-Spiele: Cover + Titel als Vorschau laden (optional, schlägt sanft fehl)
+    if (t.platform === 'viscode') {
+      fetch(API_BASE + '/api/v1/games').then(function (r) { return r.json(); }).then(function (d) {
+        var list = (d && (d.games || d)) || [];
+        var g = list.find(function (x) { return String(x.id) === String(t.id); });
+        if (!g) return;
+        document.getElementById('title').textContent = g.title || g.name || 'VisCode-Spiel';
+        var media = g.media || {};
+        var cover = media.cover || media.banner || null;
+        if (cover) {
+          if (/^\/\//.test(cover)) cover = 'https:' + cover;
+          var img = document.getElementById('cover');
+          img.src = cover; img.style.display = 'block';
+        }
+        document.getElementById('sub').textContent = 'Öffnet dieses Spiel direkt im VisCode Launcher.';
+      }).catch(function () { /* Vorschau egal – der Button funktioniert trotzdem */ });
+    } else {
+      document.getElementById('title').textContent = (t.platform.charAt(0).toUpperCase() + t.platform.slice(1)) + '-Spiel';
+      document.getElementById('sub').textContent = 'Öffnet dieses Spiel direkt im VisCode Launcher.';
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,14 +1,9 @@
 <!DOCTYPE html>
-<!--
-  Vystra Launcher — public review source
-  Copyright (c) 2026 Stefan Reibnegger (Vystra)
-  License: FSL-1.1-ALv2 (Functional Source License) — no competing commercial product.
--->
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; img-src 'self' https: data:; media-src 'self' https: blob: mediastream: data: vystra-audio:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src https: wss://removed.invalid wss://removed.invalid">
+        content="default-src 'self'; img-src 'self' https: data:; media-src 'self' https: blob: mediastream: data: vystra-audio:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src https: wss://p2p.vis-code.com wss://api.vis-code.com">
   <title>Vystra Launcher</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -192,10 +187,11 @@
         <button class="topnav-link active" data-page="entdecken">Entdecken</button>
         <button class="topnav-link" data-page="alle">Alle Spiele</button>
         <button class="topnav-link" data-page="bibliothek">Meine Bibliothek</button>
+        <button class="topnav-link" data-page="clips">Clips</button>
         <button class="topnav-link" data-page="freunde">Freunde</button>
         <button class="topnav-link" data-page="cloud">Cloud Gaming</button>
-        <!-- Zubehoer bleibt klickbar, zeigt aber vorerst nur "is coming". -->
-        <button class="topnav-link" id="topnavShop" data-page="shop">Zubehör<span class="topnav-coming">Coming</span></button>
+        <!-- Zubehoer bleibt klickbar, Shop kommt spaeter. -->
+        <button class="topnav-link" id="topnavShop" data-page="shop">Zubehör<span class="topnav-coming">Kommt bald</span></button>
         <button class="topnav-link" data-page="einstellungen">Einstellungen</button>
       </nav>
     </div>
@@ -396,6 +392,7 @@
       <button class="dropdown-item" id="dropdownPurchasesBtn">🧾 Käufe &amp; Rechnungen</button>
       <button class="dropdown-item" id="dropdownFamilyBtn">👪 Family (Bibliothek teilen)</button>
       <button class="dropdown-item" id="dropdownCreditsBtn">🏆 Credits (Steam, Epic, Vystra)</button>
+      <button class="dropdown-item" id="dropdownSourceBtn">📜 Quelltext nachlesen</button>
       <button class="dropdown-item" id="dropdownAgbBtn">📄 AGBs</button>
       <hr class="dropdown-divider">
       <div class="dropdown-subheader">Verknüpfte Konten</div>
@@ -428,17 +425,21 @@
       </ul>
       <h3 style="margin-top:16px">Genutzte Websites &amp; Datenquellen</h3>
       <ul class="credits-sites">
-        <li><b>Vystra Server</b> — removed.invalid <span class="credits-use">(Konto, Spiele, Käufe, Freunde, Presence)</span></li>
+        <li><b>Vystra Server</b> — api.vis-code.com <span class="credits-use">(Konto, Spiele, Käufe, Freunde, Presence)</span></li>
         <li><b>Steam</b> — api.steampowered.com · steamcommunity.com · store.steampowered.com · steamstatic.com <span class="credits-use">(Besitz, Freunde, Bilder, Store)</span></li>
         <li><b>Epic Games</b> — graphql.epicgames.com · *.epicgames.com (catalog/library/account/friends) <span class="credits-use">(Bibliothek, Store, Freunde)</span></li>
         <li><b>Xbox / Microsoft</b> — xboxlive.com (peoplehub, titlehub) <span class="credits-use">(Profil, Freunde, Spiele)</span></li>
         <li><b>GamerPower</b> — gamerpower.com/api <span class="credits-use">(Gratis-Aktionen &amp; Giveaways)</span></li>
         <li><b>Tenor</b> — tenor.com · tenor.googleapis.com <span class="credits-use">(GIF-Memes für Profilbild &amp; Banner)</span></li>
         <li><b>NVIDIA GeForce NOW</b> — play.geforcenow.com <span class="credits-use">(Cloud Gaming)</span></li>
-        <li><b>GitHub</b> — github.com/Stefan2010byte/viscode-launcher <span class="credits-use">(Auto-Updates / Releases)</span></li>
+        <li><b>GitHub Releases</b> — github.com/Stefan2010byte/viscode-launcher <span class="credits-use">(offizielle Downloads)</span></li>
+        <li><b>Prüf-Quelle</b> — <a href="https://github.com/Stefan2010byte/vystra-launcher-source" id="creditsSourceLink">github.com/Stefan2010byte/vystra-launcher-source</a> <span class="credits-use">(FSL-1.1: lesen, lernen, Mods)</span></li>
       </ul>
       <p style="font-size:12px;opacity:.8">Marken &amp; Logos gehören ihren jeweiligen Eigentümern. Vystra steht in keiner offiziellen Verbindung zu diesen Anbietern.</p>
       <p>Besonderer Dank gilt der Community für das Feedback und den Open-Source-Beiträgen!</p>
+      <p style="margin-top:14px">Kein Vertrauen in die EXE? Den Quelltext kannst du unter der Functional Source License (FSL-1.1) nachlesen und für Mods nutzen — nicht als konkurrierenden Launcher oder Shop verkaufen.</p>
+      <p><a href="https://github.com/Stefan2010byte/vystra-launcher-source" id="creditsLicenseLink">github.com/Stefan2010byte/vystra-launcher-source</a> · <a href="https://github.com/Stefan2010byte/vystra-launcher-source/blob/main/LICENSE">Lizenz FSL-1.1</a></p>
+      <button class="btn-primary" type="button" id="creditsSourceBtn">📜 Quelltext nachlesen</button>
     </div>
     <div class="modal-actions">
       <button class="btn-primary" id="creditsCloseBtn">Schließen</button>

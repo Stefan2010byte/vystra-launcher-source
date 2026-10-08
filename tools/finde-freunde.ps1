@@ -1,5 +1,3 @@
-# Vystra Launcher — Copyright (c) 2026 Stefan Reibnegger (Vystra)
-# FSL-1.1-ALv2 (Functional Source License) — no competing commercial product.
 # Freundensync: Launcher oeffnen, Woerter/Knoepfe suchen (Profil, ID, Freunde),
 # klicken, dann ein Koordinatenraster drueberlegen und Name / User-ID / Freunde lesen.
 # Ausgabe: eine JSON-Zeile.

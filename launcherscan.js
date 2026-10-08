@@ -1,11 +1,3 @@
-/**
- * Vystra Launcher — public review source
- * Copyright (c) 2026 Stefan Reibnegger (Vystra)
- * Author: Stefan Reibnegger
- * License: FSL-1.1-ALv2 (Functional Source License) — no competing commercial product.
- * Official binaries: https://github.com/Stefan2010byte/viscode-launcher
- * This copy has Vystra server APIs and the Vystra shop backend removed.
- */
 // launcherscan.js
 // Grüner, rein LOKALER Multi-Launcher-Scanner für den Vystra Launcher.
 // - Liest ausschließlich lokale Dateien + Registry (reg query). KEINE Netzwerkaufrufe,
@@ -51,6 +43,24 @@ function exists(p) {
   } catch {
     return false;
   }
+}
+
+function emitGame(opts, launcherId, game) {
+  if (!opts || typeof opts.onGame !== "function" || !game) return;
+  try {
+    opts.onGame({ launcherId, game });
+  } catch {}
+}
+
+function pushGame(out, game, opts) {
+  out.games.push(game);
+  emitGame(opts, out.id, game);
+  return game;
+}
+
+function emitAllGames(opts, launcherId, games) {
+  if (!games || !games.length) return;
+  for (const g of games) emitGame(opts, launcherId, g);
 }
 
 // Registry-Einzelwert lesen (nur Windows). Gibt String oder null.
@@ -184,7 +194,7 @@ function steamAccount(steamPath) {
   return { name: best.persona || best.accountName || best.steamId, id: best.steamId };
 }
 
-async function scanSteam() {
+async function scanSteam(opts) {
   const out = { id: "steam", name: "Steam", installed: false, account: null, games: [] };
   try {
     const steamPath = await findSteamPath();
@@ -204,12 +214,13 @@ async function scanSteam() {
         seen.add(appid);
         const installdir = vdfValue(raw, "installdir");
         const dir = installdir ? path.join(apps, "common", installdir) : null;
-        out.games.push({
+        pushGame(out, {
           id: appid,
           name,
           installDir: dir,
           launchUri: "steam://rungameid/" + appid
-        });
+        }, opts);
+        if (out.games.length % 12 === 0) await scanPause(1);
       }
     }
     out.games.sort((a, b) => String(a.name).localeCompare(String(b.name), "de"));
@@ -241,16 +252,47 @@ function epicAccount() {
   return null;
 }
 
-async function scanEpic() {
+function scanPause(ms) {
+  return ms ? new Promise(r => setTimeout(r, ms)) : Promise.resolve();
+}
+
+async function scanEpic(opts) {
+  const onStep = opts && typeof opts.onStep === "function" ? opts.onStep : null;
+  const paceMs = opts && opts.paceMs ? Number(opts.paceMs) || 0 : 0;
   const out = { id: "epic", name: "Epic Games", installed: false, account: null, games: [] };
   try {
     const dir = epicManifestDir();
+    if (onStep) {
+      try {
+        onStep({
+          type: "step",
+          phase: "epic-open",
+          id: "epic",
+          name: "Epic Games",
+          text: exists(dir) ? "Epic-Manifestordner gefunden" : "Kein Epic-Manifestordner",
+          detail: dir
+        });
+      } catch {}
+    }
     if (!exists(dir)) return out;
     out.installed = true;
     out.account = epicAccount();
     const seen = new Set();
     for (const ent of safeReadDir(dir)) {
       if (!ent.isFile() || !/\.item$/i.test(ent.name)) continue;
+      if (onStep) {
+        try {
+          onStep({
+            type: "step",
+            phase: "epic-file",
+            id: "epic",
+            name: "Epic Games",
+            text: "Öffne Manifest " + ent.name,
+            detail: path.join(dir, ent.name)
+          });
+        } catch {}
+      }
+      await scanPause(paceMs);
       const raw = safeReadFile(path.join(dir, ent.name));
       if (!raw) continue;
       let j;
@@ -261,13 +303,25 @@ async function scanEpic() {
       // DLC/Plugins ohne eigene InstallLocation überspringen.
       if (!name) continue;
       seen.add(appName);
-      out.games.push({
+      pushGame(out, {
         id: appName,
         name,
         installDir: j.InstallLocation || null,
         launchUri:
           "com.epicgames.launcher://apps/" + encodeURIComponent(appName) + "?action=launch&silent=true"
-      });
+      }, opts);
+      if (onStep) {
+        try {
+          onStep({
+            type: "step",
+            phase: "epic-item",
+            id: "epic",
+            name: "Epic Games",
+            text: "Epic · " + name,
+            detail: j.InstallLocation || ent.name
+          });
+        } catch {}
+      }
     }
     out.games.sort((a, b) => String(a.name).localeCompare(String(b.name), "de"));
   } catch {}
@@ -294,7 +348,7 @@ function parseOriginMfst(raw) {
   return id ? { id: decodeURIComponent(id), installDir } : null;
 }
 
-async function scanEA() {
+async function scanEA(opts) {
   const out = { id: "ea", name: "EA / Origin", installed: false, account: null, games: [] };
   try {
     const pd = process.env.ProgramData || "C:\\ProgramData";
@@ -312,12 +366,12 @@ async function scanEA() {
           const info = parseOriginMfst(safeReadFile(path.join(gameDir, f.name)));
           if (!info || seen.has(info.id)) continue;
           seen.add(info.id);
-          out.games.push({
+          pushGame(out, {
             id: info.id,
             name: sub.name,
             installDir: info.installDir || null,
             launchUri: "origin://launchgame/" + info.id
-          });
+          }, opts);
         }
       }
     }
@@ -346,12 +400,12 @@ async function scanEA() {
           if (p) installDir = p.trim();
         }
         seen.add(id);
-        out.games.push({
+        pushGame(out, {
           id,
           name,
           installDir,
           launchUri: "ea://launchgame/" + id
-        });
+        }, opts);
       }
     }
 
@@ -383,7 +437,7 @@ function ubisoftAccount() {
   return null;
 }
 
-async function scanUbisoft() {
+async function scanUbisoft(opts) {
   const out = { id: "ubisoft", name: "Ubisoft Connect", installed: false, account: null, games: [] };
   try {
     if (!IS_WIN) return out;
@@ -403,12 +457,12 @@ async function scanUbisoft() {
       if (!name && dir) name = path.basename(dir.replace(/[\\/]+$/, ""));
       if (!name) name = "Ubisoft-Spiel (ID: " + id + ")";
       seen.add(id);
-      out.games.push({
+      pushGame(out, {
         id,
         name,
         installDir: dir || null,
         launchUri: "uplay://launch/" + id + "/0"
-      });
+      }, opts);
     }
     out.games.sort((a, b) => String(a.name).localeCompare(String(b.name), "de"));
   } catch {}
@@ -621,7 +675,7 @@ async function scanItchDb() {
 }
 // itch als (nativer) Scan-Launcher: liefert die butler.db-Spiele. installed=true,
 // sobald die itch-DB existiert (itch ist dann installiert), auch wenn 0 Spiele.
-async function scanItch() {
+async function scanItch(opts) {
   const out = { id: "itch", name: "itch", installed: false, account: null, games: [], launchScheme: "itch://" };
   try {
     const db = await scanItchDb();
@@ -629,12 +683,13 @@ async function scanItch() {
     out.installed = true;
     out.bibliothek = { anzahl: db.games.length, installiert: db.installedCount, quelle: db.quelle };
     out.games = db.games;
+    emitAllGames(opts, out.id, out.games);
     if (db.fehler) out.dbFehler = db.fehler;
   } catch {}
   return out;
 }
 
-async function scanGOG() {
+async function scanGOG(opts) {
   const out = { id: "gog", name: "GOG Galaxy", installed: false, account: null, games: [] };
   try {
     if (!IS_WIN) return out;
@@ -655,13 +710,13 @@ async function scanGOG() {
         String(v.gameName || v.startMenu || "").trim() ||
         (dir ? path.basename(dir.replace(/[\\/]+$/, "")) : "GOG-Spiel (ID: " + id + ")");
       seen.add(id);
-      out.games.push({
+      pushGame(out, {
         id,
         name,
         installed: true,
         installDir: dir || null,
         launchUri: "goggalaxy://openGameView/" + id
-      });
+      }, opts);
     }
     // 2) Die volle Bibliothek (auch nicht installiert, mit Bild/Meta/Spielzeit)
     //    aus der lokalen Galaxy-DB dazumischen. Existiert die DB, ist Galaxy da.
@@ -678,7 +733,7 @@ async function scanGOG() {
           continue;
         }
         seen.add(g.id);
-        out.games.push(g);
+        pushGame(out, g, opts);
       }
     } else if (dbErg.fehler) {
       out.dbFehler = dbErg.fehler;
@@ -690,7 +745,7 @@ async function scanGOG() {
 
 // ── Xbox / Microsoft Store (best-effort, darf leer sein) ─────────────────────
 
-async function scanXbox() {
+async function scanXbox(opts) {
   const out = { id: "xbox", name: "Xbox / Microsoft Store", installed: false, account: null, games: [] };
   try {
     if (!IS_WIN) return out;
@@ -734,13 +789,13 @@ async function scanXbox() {
           }
         } catch {}
         if (!name) name = p.Name.replace(/^.*\./, "").replace(/([a-z])([A-Z])/g, "$1 $2");
-        out.games.push({
+        pushGame(out, {
           id: p.Name,
           name: name.trim(),
           installDir: p.Loc || null,
           // Startbar über das Shell-AppsFolder-Ziel des Family-Namens.
           launchUri: p.Family ? "shell:AppsFolder\\" + p.Family : null
-        });
+        }, opts);
       }
     }
 
@@ -753,14 +808,84 @@ async function scanXbox() {
 
 async function scanAll(opts) {
   const onLauncher = opts && typeof opts.onLauncher === "function" ? opts.onLauncher : null;
+  const onStep = opts && typeof opts.onStep === "function" ? opts.onStep : null;
+  const onGame = opts && typeof opts.onGame === "function" ? opts.onGame : null;
   const launchers = [];
-  // Nacheinander, damit die Bibliothek live füllen kann (Steam zuerst, Xbox zuletzt).
-  for (const fn of [scanSteam, scanEpic, scanEA, scanUbisoft, scanGOG, scanXbox, scanItch]) {
-    const l = await fn();
+  // Nacheinander, damit die Bibliothek live füllen kann (Steam zuerst, itch zuletzt).
+  // onGame feuert je Titel sofort; onStep bleibt intern (kein sichtbares Overlay).
+  const schritte = [
+    { fn: scanSteam, id: "steam", name: "Steam", detail: "Registry + steamapps/libraryfolders" },
+    { fn: scanEpic, id: "epic", name: "Epic Games", detail: "Epic-Manifeste unter ProgramData" },
+    { fn: scanEA, id: "ea", name: "EA App", detail: "EA Desktop / Origin-Installationen" },
+    { fn: scanUbisoft, id: "ubisoft", name: "Ubisoft Connect", detail: "Ubisoft-Registry" },
+    { fn: scanGOG, id: "gog", name: "GOG Galaxy", detail: "GOG-Registry + Galaxy-DB" },
+    { fn: scanXbox, id: "xbox", name: "Xbox / Microsoft Store", detail: "Xbox-Apps + WindowsApps" },
+    { fn: scanItch, id: "itch", name: "itch.io", detail: "itch butler.db (lokal)" }
+  ];
+  if (onStep) {
+    try {
+      onStep({ type: "step", phase: "start", text: "Lokaler Scan startet — Dateien + Registry, keine KI", total: schritte.length });
+    } catch {}
+  }
+  let i = 0;
+  for (const s of schritte) {
+    i++;
+    if (onStep) {
+      try {
+        onStep({
+          type: "step",
+          phase: "pruefe",
+          id: s.id,
+          name: s.name,
+          text: "Prüfe " + s.name + " …",
+          detail: s.detail,
+          index: i,
+          total: schritte.length
+        });
+      } catch {}
+    }
+    if (opts && opts.paceMs) {
+      await scanPause(opts.paceMs);
+    }
+    const l = await s.fn({ onStep, onGame, paceMs: opts && opts.paceMs });
     launchers.push(l);
+    if (onStep) {
+      const games = Array.isArray(l.games) ? l.games : [];
+      const titles = games.slice(0, 14).map(g => (g && (g.name || g.title)) || "").filter(Boolean);
+      try {
+        onStep({
+          type: "step",
+          phase: "fertig",
+          id: s.id,
+          name: s.name,
+          installed: !!l.installed,
+          games: games.length,
+          titles,
+          more: Math.max(0, games.length - titles.length),
+          text: l.installed
+            ? (s.name + " gefunden · " + games.length + " Spiele")
+            : (s.name + " nicht gefunden"),
+          index: i,
+          total: schritte.length
+        });
+      } catch {}
+    }
     if (onLauncher) {
       try { onLauncher(l); } catch {}
     }
+  }
+  if (onStep) {
+    const gesamt = launchers.reduce((n, l) => n + ((l.games || []).length), 0);
+    const da = launchers.filter(l => l && l.installed).length;
+    try {
+      onStep({
+        type: "step",
+        phase: "ende",
+        text: "Scan fertig · " + gesamt + " Spiele in " + da + " Launchern",
+        games: gesamt,
+        launchers: da
+      });
+    } catch {}
   }
   return {
     ok: true,

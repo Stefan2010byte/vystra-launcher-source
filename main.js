@@ -1,11 +1,3 @@
-/**
- * Vystra Launcher — public review source
- * Copyright (c) 2026 Stefan Reibnegger (Vystra)
- * Author: Stefan Reibnegger
- * License: FSL-1.1-ALv2 (Functional Source License) — no competing commercial product.
- * Official binaries: https://github.com/Stefan2010byte/viscode-launcher
- * This copy has Vystra server APIs and the Vystra shop backend removed.
- */
 const {
   app,
   BrowserWindow,
@@ -61,6 +53,7 @@ try {
 }
 // Rein lokaler Multi-Launcher-Scanner (eigene Datei, keine Electron-Abhängigkeit).
 const launcherScan = require("./launcherscan");
+const aiScanEngine = require("./ai-scan/engine");
 let _xboxScannerInst = null;
 function xboxScanner() {
   if (!_xboxScannerInst) {
@@ -84,15 +77,7 @@ let tray = null;
 let isQuitting = false;
 // ── Sicherheits-Härtung ─────────────────────────────────────────────────────
 // Feste Host-Allowlist für Auto-Updater-Downloads (NICHT aus Settings ableitbar!).
-// PUBLIC REVIEW BUILD — by Stefan Reibnegger (2026)
-// Vystra-eigene Server, Konto-API, Wallet und der eigene Shop sind hier entfernt.
-// Offizielle Builds: https://github.com/Stefan2010byte/viscode-launcher
-const PUBLIC_REVIEW_BUILD = true;
-function vystraServerGesperrt(_0xurl) {
-  const _0xu = String(_0xurl || "").toLowerCase();
-  return !_0xu || _0xu.includes("removed.invalid");
-}
-const UPDATE_HOST_ALLOWLIST = ["github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com"];
+const UPDATE_HOST_ALLOWLIST = ["github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com", "api.vis-code.com", "vystra.games"];
 // Sicherheitskritische Settings-Keys, die der Renderer NICHT überschreiben darf.
 const PROTECTED_SETTINGS_KEYS = ["updateServerUrl", "apiBaseUrl", "gameBridgePort", "turnUrl", "turnUsername", "turnCredential"];
 // ── Vystra Musik-Player: Download-Quellen ───────────────────────────────────
@@ -314,15 +299,24 @@ function hauptfensterZeigen() {
   try {
     if (mainWindow.isMinimized()) {
       mainWindow.restore();
+      fensterOpacityZurueck();
+      mainWindow.show();
+      mainWindow.focus();
+      return;
     }
-    mainWindow.show();
-    mainWindow.focus();
+    fensterEinblenden().catch(() => {
+      try {
+        mainWindow.show();
+        mainWindow.focus();
+      } catch {}
+    });
   } catch {}
 }
 const defaultSettings = {
-  apiBaseUrl: "https://removed.invalid",
+  apiBaseUrl: "https://api.vis-code.com",
   user: null,
   autoStartPlatforms: false,
+  autoLauncherScan: false,
   steamId64: "",
   steamApiKey: "",
   connectSteam: true,
@@ -350,21 +344,24 @@ const defaultSettings = {
   ubisoftName: "",
   ubisoftTicketAt: 0,
   firstRun: true,
+  steamFriendsAsked: false,
+  steamFriendsSync: null,
   language: "de",
+  languageChosen: false,
   fluxEnabled: false,
   fluxUrl: "http://127.0.0.1:7860",
   llamaEnabled: false,
   llamaUrl: "http://127.0.0.1:11434",
   llamaModel: "llama3.2-vision",
   gameBridgePort: 8448,
-  turnUrl: "",
-  turnUsername: "",
-  turnCredential: "",
+  turnUrl: "turn:free.expressturn.com:3478",
+  turnUsername: "000000002099321799",
+  turnCredential: "PI7iBUQI3oU6hUCA4wowHXi47vU=",
   updateServerUrl: "https://github.com/Stefan2010byte/viscode-launcher/releases/latest/download",
   autoUpdate: false,
-  viscodeInfoUrl: "https://removed.invalid",
-  viscodePublishers: ["pub_000009"],
-  paymentUrl: "",
+  viscodeInfoUrl: "https://api.vis-code.com",
+  viscodePublishers: ["pub_000032"],
+  paymentUrl: "https://tht5uthuth78uhtugh75894ffhv987uzh.ai.studio/",
   publisherPortal: false,
   pubShowDevDetails: false,
   pubShowTestBuilds: false,
@@ -377,7 +374,10 @@ const defaultSettings = {
   // Spiele automatisch im Hintergrund aktualisieren (VisCode-Helper). Aus = manuell über den Button.
   vcAutoUpdate: true,
   // Quelle für die automatische Mitinstallation des Vystra Musik-Players (ZIP).
-  musicPlayerUrl: MUSIC_PLAYER_URL_DEFAULT
+  musicPlayerUrl: MUSIC_PLAYER_URL_DEFAULT,
+  uiSkin: "vystra",
+  uiSkinBase: "vystra",
+  uiCustomOn: false
 };
 async function checkHardware() {
   const _0x2493d = os.totalmem() / 1073741824;
@@ -473,13 +473,10 @@ function saveSocial(_0x3e6e72) {
   }
 }
 async function socialApi(_0x170667, _0x18834a, _0x5aac38) {
-  if (typeof PUBLIC_REVIEW_BUILD !== "undefined" && PUBLIC_REVIEW_BUILD) {
-    return { ok: false, offline: true, error: "Vystra server removed in public review source." };
-  }
   const _0x49677f = loadSettings();
   const _0x10ef2e = (_0x49677f.apiBaseUrl || "").replace(/\/$/, "");
   // Auth-Endpoints, die absichtlich OHNE Token laufen (Pre-Login: Code prüfen, Passwort zurücksetzen).
-  const _tokenlosOk = /^\/removed\b/.test(_0x18834a || "");
+  const _tokenlosOk = /^\/api\/(verify-code|auth\/reset-password|crowd)\b/.test(_0x18834a || "");
   if (!_0x10ef2e || !_0x49677f.sessionToken && !_tokenlosOk) {
     return {
       ok: false,
@@ -538,9 +535,6 @@ function familyStatusText(_0x370fb1) {
   return "Server-Fehler (HTTP " + (_0x370fb1 || 0) + ").";
 }
 async function familyApi(_0xa079fb, _0x38773b, _0x486335) {
-  if (typeof PUBLIC_REVIEW_BUILD !== "undefined" && PUBLIC_REVIEW_BUILD) {
-    return { ok: false, error: "Vystra server removed in public review source." };
-  }
   let _0xc10408 = null;
   try {
     _0xc10408 = await socialApi(_0xa079fb, _0x38773b, _0x486335);
@@ -643,6 +637,47 @@ function licensesDir() {
   } catch {}
   return _0x1f8dae;
 }
+const LAUNCHER_LANG_CODES = ["de", "en", "ru", "uk", "es", "fr", "it", "pt", "pl", "nl", "cs", "hu", "tr", "lb", "ja", "zh", "ko", "ar"];
+function detectWindowsLang() {
+  let _0xraw = "";
+  try {
+    if (typeof app.getSystemLocale === "function") {
+      _0xraw = app.getSystemLocale() || "";
+    }
+  } catch {}
+  if (!_0xraw) {
+    try {
+      _0xraw = app.getLocale() || "";
+    } catch {}
+  }
+  if (!_0xraw) {
+    try {
+      _0xraw = Intl.DateTimeFormat().resolvedOptions().locale || "";
+    } catch {}
+  }
+  const _0xn = String(_0xraw || "").replace(/_/g, "-").toLowerCase();
+  if (_0xn.startsWith("zh")) {
+    return "zh";
+  }
+  if (_0xn.startsWith("pt")) {
+    return "pt";
+  }
+  const _0xprim = _0xn.split("-")[0];
+  if (LAUNCHER_LANG_CODES.includes(_0xprim)) {
+    return _0xprim;
+  }
+  return "en";
+}
+function applyResolvedLanguage(_0xmerged) {
+  const _0xwin = detectWindowsLang();
+  _0xmerged.windowsLang = _0xwin;
+  if (_0xmerged.languageChosen !== true) {
+    _0xmerged.language = _0xwin;
+  } else if (!LAUNCHER_LANG_CODES.includes(_0xmerged.language)) {
+    _0xmerged.language = _0xwin;
+  }
+  return _0xmerged;
+}
 function loadSettings() {
   try {
     const _0x4cd092 = fs.readFileSync(settingsPath(), "utf8");
@@ -653,18 +688,32 @@ function loadSettings() {
     if (!_0x195d07.updateServerUrl || _0x195d07.updateServerUrl === "http://127.0.0.1:8449") {
       _0x195d07.updateServerUrl = defaultSettings.updateServerUrl;
     }
-    return {
+    const _0xpubs = Array.isArray(_0x195d07.viscodePublishers) ? _0x195d07.viscodePublishers.slice() : [];
+    const _0xcanon = [];
+    for (const _0xp of _0xpubs) {
+      const _0xid = _0xp === "pub_000052" ? "pub_000032" : _0xp;
+      if (_0xid && _0xid !== "pub_000009" && !_0xcanon.includes(_0xid)) {
+        _0xcanon.push(_0xid);
+      }
+    }
+    if (!_0xcanon.includes("pub_000032")) {
+      _0xcanon.unshift("pub_000032");
+    }
+    _0x195d07.viscodePublishers = _0xcanon.length ? _0xcanon : defaultSettings.viscodePublishers;
+    return applyResolvedLanguage({
       ...defaultSettings,
       ..._0x195d07
-    };
+    });
   } catch {
-    return {
+    return applyResolvedLanguage({
       ...defaultSettings
-    };
+    });
   }
 }
 function saveSettings(_0x177708) {
-  fs.writeFileSync(settingsPath(), JSON.stringify(_0x177708, null, 2), "utf8");
+  const _0xcopy = Object.assign({}, _0x177708 || {});
+  delete _0xcopy.windowsLang;
+  fs.writeFileSync(settingsPath(), JSON.stringify(_0xcopy, null, 2), "utf8");
 }
 let cachedHwid = null;
 async function computeHwid() {
@@ -747,9 +796,6 @@ function isOwnApi(_0x4e5082) {
   }
 }
 function watermarkHeaders(_0x144081, _0x32356b) {
-  if (typeof PUBLIC_REVIEW_BUILD !== "undefined" && PUBLIC_REVIEW_BUILD) {
-    return {};
-  }
   if (!isOwnApi(_0x144081)) {
     return {};
   }
@@ -1532,11 +1578,11 @@ async function viscodeOauthLogin() {
         return null;
       }
       {
-        const _0x4edd09 = await fetch(_0x457ec1 + "/removed", {
+        const _0x4edd09 = await fetch(_0x457ec1 + "/api/oauth/token", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...watermarkHeaders(_0x457ec1 + "/removed")
+            ...watermarkHeaders(_0x457ec1 + "/api/oauth/token")
           },
           body: JSON.stringify({
             client_id: VISCODE_OAUTH_CLIENT,
@@ -1556,7 +1602,7 @@ async function viscodeOauthLogin() {
         saveSettings(_0x328c22);
         if (!_0x328c22.user || !_0x328c22.user.id) {
           try {
-            const _0x4081ed = await fetchJson(_0x457ec1 + "/removed", {
+            const _0x4081ed = await fetchJson(_0x457ec1 + "/api/user/me", {
               headers: {
                 Authorization: "Bearer " + _0x3f1273
               }
@@ -1701,14 +1747,243 @@ function deliverVybg(_0xfile) {
     _pendingVybg = _0xdata;
   }
 }
-function openWebAppWindow(_0xurl, _0xname, _0xicon) {
+// ── Web-Launcher: Downloads der hinterlegten Website wie Spiel-Installs ──────
+// Eine Bibliotheks-Website mit downloadLauncher=true öffnet die Seite im
+// Electron-Fenster. ZIP/EXE/MSI werden nicht im Browser gespeichert, sondern
+// wie ein Vystra-Download: Fortschritt, entpacken, EXE finden, Desktop-.lnk.
+const WEBDL_PACK_RE = /\.(zip|exe|msi|7z)$/i;
+const WEBDL_MIME_RE = /zip|x-zip|x-msdownload|octet-stream|x-7z|x-rar|msix|x-msi/i;
+let _webDlActive = null;
+const _webDlSessions = new WeakSet();
+function webDlSafeName(_0xname) {
+  return String(_0xname || "Download").replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, " ").trim().slice(0, 60) || "Download";
+}
+function webDlGamesRoot() {
+  try {
+    const _0xs = loadSettings();
+    if (_0xs && typeof _0xs.vcInstallDir === "string" && _0xs.vcInstallDir.trim()) {
+      return path.join(_0xs.vcInstallDir.trim(), "VisCode Games");
+    }
+  } catch {}
+  return path.join(app.getPath("downloads"), "VisCode Games");
+}
+function webDlIsPackage(_0xname, _0xmime) {
+  const _0xn = String(_0xname || "");
+  if (WEBDL_PACK_RE.test(_0xn)) {
+    return true;
+  }
+  const _0xm = String(_0xmime || "").toLowerCase();
+  if (_0xm && WEBDL_MIME_RE.test(_0xm) && /\.(zip|exe|msi|7z|bin|pkg)(\?|$)/i.test(_0xn)) {
+    return true;
+  }
+  return false;
+}
+function webDlSendProgress(_0xdata) {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("download:progress", {
+        kind: "webdl",
+        gameId: _0xdata && _0xdata.gameId || "webdl",
+        title: _0xdata && _0xdata.title || "Web-Download",
+        pct: _0xdata && _0xdata.pct != null ? _0xdata.pct : 0,
+        done: _0xdata && _0xdata.done,
+        total: _0xdata && _0xdata.total
+      });
+    }
+  } catch {}
+}
+function webDlSendDone(_0xentry) {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("webapp:pkg-done", _0xentry || {});
+    }
+  } catch {}
+}
+function webDlUniqueDir(_0xroot, _0xbase) {
+  let _0xdir = path.join(_0xroot, _0xbase);
+  let _0xn = 2;
+  while (fs.existsSync(_0xdir)) {
+    _0xdir = path.join(_0xroot, _0xbase + " " + _0xn);
+    _0xn += 1;
+    if (_0xn > 80) {
+      break;
+    }
+  }
+  return _0xdir;
+}
+function webDlWriteShortcut(_0xtitle, _0xexe) {
+  if (!_0xexe || !fs.existsSync(_0xexe)) {
+    return "";
+  }
+  const _0xsafe = webDlSafeName(_0xtitle);
+  try {
+    if (IS_WIN && typeof shell.writeShortcutLink === "function") {
+      const _0xlnk = path.join(app.getPath("desktop"), _0xsafe + ".lnk");
+      const _0xok = shell.writeShortcutLink(_0xlnk, "create", {
+        target: _0xexe,
+        cwd: path.dirname(_0xexe),
+        icon: _0xexe,
+        iconIndex: 0,
+        description: _0xsafe + " – Vystra"
+      });
+      return _0xok ? _0xlnk : "";
+    }
+  } catch {}
+  return "";
+}
+function webDlSaveEntry(_0xentry) {
+  try {
+    const _0xs = loadSettings();
+    const _0xarr = Array.isArray(_0xs.webDownloads) ? _0xs.webDownloads.slice() : [];
+    const _0xidx = _0xarr.findIndex(_0xx => _0xx && _0xx.id === _0xentry.id);
+    if (_0xidx >= 0) {
+      _0xarr[_0xidx] = {
+        ..._0xarr[_0xidx],
+        ..._0xentry
+      };
+    } else {
+      _0xarr.push(_0xentry);
+    }
+    _0xs.webDownloads = _0xarr;
+    saveSettings(_0xs);
+  } catch {}
+}
+async function webDlFinishFile(_0xfile, _0xfilename, _0xsrc) {
+  const _0xtitle = webDlSafeName(String(_0xfilename || "Download").replace(/\.(zip|exe|msi|7z)$/i, ""));
+  const _0xdest = webDlUniqueDir(webDlGamesRoot(), _0xtitle);
+  fs.mkdirSync(_0xdest, {
+    recursive: true
+  });
+  webDlSendProgress({
+    gameId: "webdl:" + _0xtitle,
+    title: "Entpacke " + _0xtitle,
+    pct: 92
+  });
+  const _0xlow = String(_0xfilename || "").toLowerCase();
+  if (/\.zip$/i.test(_0xlow)) {
+    await musicExtractZip(_0xfile, _0xdest);
+    try {
+      fs.unlinkSync(_0xfile);
+    } catch {}
+  } else {
+    const _0xcopy = path.join(_0xdest, path.basename(_0xfile));
+    fs.copyFileSync(_0xfile, _0xcopy);
+    try {
+      fs.unlinkSync(_0xfile);
+    } catch {}
+  }
+  const _0xexe = findGameExe(_0xdest);
+  const _0xshortcut = webDlWriteShortcut(_0xtitle, _0xexe);
+  const _0xentry = {
+    id: "wd_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    title: _0xtitle,
+    sourceId: _0xsrc && _0xsrc.id || "",
+    sourceName: _0xsrc && _0xsrc.name || "",
+    sourceUrl: _0xsrc && _0xsrc.url || "",
+    dir: _0xdest,
+    exe: _0xexe || null,
+    shortcut: _0xshortcut || "",
+    installedAt: Date.now()
+  };
+  webDlSaveEntry(_0xentry);
+  webDlSendProgress({
+    gameId: "webdl:" + _0xtitle,
+    title: _0xtitle,
+    pct: 100
+  });
+  webDlSendDone(_0xentry);
+  return _0xentry;
+}
+function installWebLauncherDownloads(_0xses) {
+  if (!_0xses || _webDlSessions.has(_0xses)) {
+    return;
+  }
+  _webDlSessions.add(_0xses);
+  _0xses.on("will-download", (_0xev, _0xitem) => {
+    let _0xname = "";
+    try {
+      _0xname = _0xitem.getFilename() || "";
+    } catch {}
+    if (!_0xname) {
+      try {
+        _0xname = path.basename(new URL(_0xitem.getURL()).pathname);
+      } catch {}
+    }
+    try {
+      _0xname = decodeURIComponent(_0xname);
+    } catch {}
+    _0xname = String(_0xname || "").split("?")[0].replace(/[\\/:*?"<>|]+/g, "_").slice(0, 140) || "download.bin";
+    let _0xmime = "";
+    try {
+      _0xmime = _0xitem.getMimeType() || "";
+    } catch {}
+    if (!webDlIsPackage(_0xname, _0xmime)) {
+      return;
+    }
+    const _0xtmpDir = path.join(app.getPath("temp"), "vystra-webdl");
+    try {
+      fs.mkdirSync(_0xtmpDir, {
+        recursive: true
+      });
+    } catch {}
+    const _0xtmp = path.join(_0xtmpDir, Date.now().toString(36) + "_" + _0xname);
+    try {
+      _0xitem.setSavePath(_0xtmp);
+    } catch {}
+    const _0xtitle = webDlSafeName(_0xname.replace(/\.(zip|exe|msi|7z)$/i, ""));
+    const _0xgid = "webdl:" + _0xtitle;
+    webDlSendProgress({
+      gameId: _0xgid,
+      title: "⬇ " + _0xtitle,
+      pct: 0
+    });
+    _0xitem.on("updated", (_0xu, _0xst) => {
+      if (_0xst !== "progressing") {
+        return;
+      }
+      try {
+        const _0xgot = _0xitem.getReceivedBytes() || 0;
+        const _0xtot = _0xitem.getTotalBytes() || 0;
+        const _0xpct = _0xtot > 0 ? Math.min(90, Math.floor(_0xgot / _0xtot * 90)) : 10;
+        webDlSendProgress({
+          gameId: _0xgid,
+          title: "⬇ " + _0xtitle,
+          pct: _0xpct,
+          done: _0xgot,
+          total: _0xtot
+        });
+      } catch {}
+    });
+    _0xitem.once("done", (_0xd, _0xstate) => {
+      if (_0xstate !== "completed") {
+        webDlSendProgress({
+          gameId: _0xgid,
+          title: "Download abgebrochen",
+          pct: 0
+        });
+        return;
+      }
+      const _0xsrc = _webDlActive || {};
+      webDlFinishFile(_0xtmp, _0xname, _0xsrc).catch(_0xerr => {
+        console.log("[Web-Launcher] Install fehlgeschlagen:", _0xerr && _0xerr.message);
+        webDlSendProgress({
+          gameId: _0xgid,
+          title: "Install fehlgeschlagen",
+          pct: 0
+        });
+      });
+    });
+  });
+}
+function openWebAppWindow(_0xurl, _0xname, _0xicon, _0xopts) {
   if (typeof _0xurl !== "string" || !/^https?:\/\//i.test(_0xurl)) {
     return {
       ok: false,
       error: "Ungültige URL"
     };
   }
-  const _0xkey = _0xurl;
+  const _0xdlMode = !!( _0xopts && _0xopts.downloadLauncher );
+  const _0xkey = _0xdlMode ? "dl:" + _0xurl : _0xurl;
   const _0xexist = webAppWindows.get(_0xkey);
   if (_0xexist && !_0xexist.isDestroyed()) {
     if (_0xexist.isMinimized()) {
@@ -1747,7 +2022,7 @@ function openWebAppWindow(_0xurl, _0xname, _0xicon) {
         nodeIntegration: false,
         contextIsolation: true,
         sandbox: true,
-        partition: "persist:webapps"
+        partition: _0xdlMode ? "persist:weblauncher" : "persist:webapps"
       }
     });
   } catch (_0xe) {
@@ -1757,16 +2032,29 @@ function openWebAppWindow(_0xurl, _0xname, _0xicon) {
     };
   }
   webAppWindows.set(_0xkey, _0xwin);
+  if (_0xdlMode) {
+    _webDlActive = {
+      id: _0xopts && _0xopts.id || "",
+      name: _0xname || "",
+      url: _0xurl
+    };
+    try {
+      installWebLauncherDownloads(_0xwin.webContents.session);
+    } catch {}
+  }
   _0xwin.on("closed", () => {
     if (webAppWindows.get(_0xkey) === _0xwin) {
       webAppWindows.delete(_0xkey);
+    }
+    if (_0xdlMode && _webDlActive && _webDlActive.url === _0xurl) {
+      _webDlActive = null;
     }
   });
   if (_0xname) {
     _0xwin.on("page-title-updated", _0xev => {
       _0xev.preventDefault();
       try {
-        _0xwin.setTitle(_0xname);
+        _0xwin.setTitle(_0xname + (_0xdlMode ? " · Web-Launcher" : ""));
       } catch {}
     });
   }
@@ -1774,6 +2062,21 @@ function openWebAppWindow(_0xurl, _0xname, _0xicon) {
     _0xwin.webContents.setWindowOpenHandler(({
       url: _0xu
     }) => {
+      if (_0xdlMode && /^https?:\/\//i.test(_0xu)) {
+        return {
+          action: "allow",
+          overrideBrowserWindowOptions: {
+            autoHideMenuBar: true,
+            backgroundColor: "#0d1117",
+            webPreferences: {
+              nodeIntegration: false,
+              contextIsolation: true,
+              sandbox: true,
+              partition: "persist:weblauncher"
+            }
+          }
+        };
+      }
       if (/^https?:\/\//i.test(_0xu)) {
         shell.openExternal(_0xu);
       }
@@ -2129,10 +2432,6 @@ function regQuery(_0x3d936b, _0x45f18d) {
   });
 }
 async function fetchJson(_0x4e2957, _0x6924cb = {}, _0x92ae12 = 6000) {
-  // Public review copy (Stefan Reibnegger): no calls to the removed Vystra backend.
-  if (typeof PUBLIC_REVIEW_BUILD !== "undefined" && PUBLIC_REVIEW_BUILD && typeof vystraServerGesperrt === "function" && vystraServerGesperrt(_0x4e2957)) {
-    return null;
-  }
   const _0x227c6f = new AbortController();
   const _0xf7ad03 = setTimeout(() => _0x227c6f.abort(), _0x92ae12);
   const {
@@ -2222,7 +2521,7 @@ async function gfnListeHolen() {
 // Oberste Regel fuer diesen ganzen Abschnitt: der Absturzmelder darf NIEMALS
 // selbst werfen. Sonst ersetzt er einen sichtbaren Absturz durch einen
 // zweiten, von dem erst recht niemand erfaehrt. Deshalb ueberall try/catch.
-const ABSTURZ_MELDE_URL = "";
+const ABSTURZ_MELDE_URL = "https://vystra.games/report/api/crash";
 const ABSTURZ_LOG_MAX = 1024 * 1024; // ab 1 MB wird gekuerzt ...
 const ABSTURZ_LOG_REST = 200 * 1024; // ... auf die letzten ~200 KB
 // Bereits verschickte Signaturen dieses Programmlaufs. Eine Fehlerschleife
@@ -2513,7 +2812,7 @@ function withPlatform(_0x536296, _0xb803a) {
 }
 let platformListCache = null;
 const STEAM_IGNORE = new Set(["228980", "1070560", "1391110", "1826330", "2348590"]);
-const BUILTIN_STEAM_API_KEY = "";
+const BUILTIN_STEAM_API_KEY = "793DDBEB618E9E532B29686E18AF9D4A";
 function effectiveSteamKey(_0x526bed) {
   return (_0x526bed && _0x526bed.steamApiKey || "").trim() || BUILTIN_STEAM_API_KEY;
 }
@@ -3500,11 +3799,22 @@ function steamLang() {
   const _0x57d0dd = {
     de: "german",
     en: "english",
+    ru: "russian",
+    uk: "ukrainian",
     es: "spanish",
     fr: "french",
+    it: "italian",
+    pt: "portuguese",
     pl: "polish",
+    nl: "dutch",
+    cs: "czech",
     hu: "hungarian",
-    lb: "german"
+    tr: "turkish",
+    lb: "german",
+    ja: "japanese",
+    zh: "schinese",
+    ko: "koreana",
+    ar: "arabic"
   };
   return _0x57d0dd[loadSettings().language] || "english";
 }
@@ -3551,11 +3861,22 @@ function acceptLang() {
   const _0x5851ee = {
     de: "de-DE",
     en: "en-US",
+    ru: "ru-RU",
+    uk: "uk-UA",
     es: "es-ES",
     fr: "fr-FR",
+    it: "it-IT",
+    pt: "pt-PT",
     pl: "pl-PL",
+    nl: "nl-NL",
+    cs: "cs-CZ",
     hu: "hu-HU",
-    lb: "de-DE"
+    tr: "tr-TR",
+    lb: "de-DE",
+    ja: "ja-JP",
+    zh: "zh-CN",
+    ko: "ko-KR",
+    ar: "ar-SA"
   };
   return _0x5851ee[loadSettings().language] || "en-US";
 }
@@ -3984,7 +4305,8 @@ async function scanEpic() {
         installPath: _0x555688.InstallLocation || null,
         catalogNamespace: _0x555688.CatalogNamespace || "",
         catalogItemId: _0x555688.CatalogItemId || "",
-        image: null
+        image: null,
+        portrait: null
       });
     } catch {}
   }
@@ -3994,8 +4316,14 @@ async function scanEpic() {
       continue;
     }
     const _0x205c6e = fetchEpicImage(_0x179c71.catalogNamespace, _0x179c71.catalogItemId).then(_0x1b57e8 => {
-      if (_0x1b57e8) {
+      if (!_0x1b57e8) {
+        return;
+      }
+      if (typeof _0x1b57e8 === "string") {
         _0x179c71.image = _0x1b57e8;
+      } else {
+        _0x179c71.image = _0x1b57e8.image || _0x179c71.image;
+        _0x179c71.portrait = _0x1b57e8.portrait || _0x179c71.portrait;
       }
     }).catch(() => {});
     _0x400a5b.push(_0x205c6e);
@@ -4833,7 +5161,7 @@ function vlSpieleScan(_0xwurzeln) {
 async function verifyOwnership(_0x4d7ea3) {
   const _0x4dfa5f = loadSettings();
   const _0x1332e0 = _0x4dfa5f.user && _0x4dfa5f.user.id;
-  const _0x13d6a6 = await socialApi("GET", "/removed" + (_0x1332e0 ? "?userId=" + encodeURIComponent(_0x1332e0) : ""));
+  const _0x13d6a6 = await socialApi("GET", "/api/launcher/library" + (_0x1332e0 ? "?userId=" + encodeURIComponent(_0x1332e0) : ""));
   if (!_0x13d6a6 || _0x13d6a6.offline || !_0x13d6a6.ok) {
     return {
       owned: null,
@@ -4870,15 +5198,22 @@ async function fetchEpicOfferById(_0xns, _0xid) {
   }, 8000);
   return _0xdata && _0xdata[_0xid] || null;
 }
+function epicArtFromKeyImages(_0xf8d870) {
+  const _0ximgs = Array.isArray(_0xf8d870) ? _0xf8d870 : [];
+  const _0xwide = (_0ximgs.find(_0xi => _0xi.type === "OfferImageWide" || _0xi.type === "DieselStoreFrontWide") || _0ximgs.find(_0xi => _0xi.type === "Thumbnail") || _0ximgs[0] || {}).url || null;
+  const _0xtall = (_0ximgs.find(_0xi => _0xi.type === "OfferImageTall" || _0xi.type === "DieselGameBoxTall" || _0xi.type === "DieselStoreFrontTall") || {}).url || null;
+  if (!_0xwide && !_0xtall) {
+    return null;
+  }
+  return {
+    image: _0xwide || _0xtall,
+    portrait: _0xtall || _0xwide
+  };
+}
 async function fetchEpicImage(_0x362e24, _0x13a61a) {
   // graphql.epicgames.com liefert seit 2025 410 Gone – Bilder ueber Catalog-API.
   const _0xoffer = await fetchEpicOfferById(_0x362e24, _0x13a61a);
-  const _0xf8d870 = _0xoffer && Array.isArray(_0xoffer.keyImages) ? _0xoffer.keyImages : [];
-  if (!_0xf8d870.length) {
-    return null;
-  }
-  const _0x45a300 = _0xf8d870.find(_0x245caa => _0x245caa.type === "OfferImageWide" || _0x245caa.type === "DieselStoreFrontWide");
-  return (_0x45a300 || _0xf8d870[0])?.url || null;
+  return epicArtFromKeyImages(_0xoffer && _0xoffer.keyImages);
 }
 async function fetchSteamShop() {
   const [_0x5f29a4, _0x348356, _0x46ea8a] = await Promise.all([steamCatalogSearch("", 0, 15, "&specials=1"), steamCatalogSearch("", 0, 15, "&filter=topsellers"), steamCatalogSearch("", 0, 15, "&filter=popularnew&sort_by=Released_DESC")]);
@@ -4911,21 +5246,22 @@ async function fetchSteamFreePromos() {
 }
 async function fetchViscodeInfo() {
   const _0x488e0a = loadSettings();
-  const _0x5f5d3f = (_0x488e0a.viscodeInfoUrl || "https://removed.invalid").replace(/\/$/, "");
-  const _0x2c5206 = Array.isArray(_0x488e0a.viscodePublishers) && _0x488e0a.viscodePublishers.length ? _0x488e0a.viscodePublishers : ["pub_000009"];
+  const _0x5f5d3f = (_0x488e0a.viscodeInfoUrl || "https://api.vis-code.com").replace(/\/$/, "");
+  const _0x2c5206 = Array.isArray(_0x488e0a.viscodePublishers) && _0x488e0a.viscodePublishers.length ? _0x488e0a.viscodePublishers : ["pub_000032"];
   const _0x567dc4 = [];
   const _0x1438a7 = [];
   for (const _0x15f58f of _0x2c5206) {
     try {
-      const _0x18295a = await fetchJson(_0x5f5d3f + "/removed/" + encodeURIComponent(_0x15f58f) + "/info", {}, 10000);
+      const _0x18295a = await fetchJson(_0x5f5d3f + "/api/publishers/" + encodeURIComponent(_0x15f58f) + "/info", {}, 10000);
       const _0x31ab0e = _0x18295a && (_0x18295a.publisher || _0x18295a) || null;
       if (!_0x31ab0e) {
         continue;
       }
       const _0x391907 = {
         id: _0x31ab0e.id || _0x15f58f,
-        name: _0x31ab0e.name || "VisCode",
-        icon: _0x31ab0e.icon || null,
+        name: (_0x31ab0e.id || _0x15f58f) === "pub_000032" || (_0x31ab0e.id || _0x15f58f) === "pub_000052" ? "Vystra Studios" : (_0x31ab0e.name || "Vystra Studios"),
+        icon: _0x31ab0e.icon || _0x31ab0e.avatar || ((_0x31ab0e.id || _0x15f58f) === "pub_000032" || (_0x31ab0e.id || _0x15f58f) === "pub_000052" ? "/media/Puplisher/32/pub_000032/Assets/avatar.png" : null),
+        banner: _0x31ab0e.banner || ((_0x31ab0e.id || _0x15f58f) === "pub_000032" || (_0x31ab0e.id || _0x15f58f) === "pub_000052" ? "/media/Puplisher/32/pub_000032/Assets/banner.png" : null),
         description: _0x31ab0e.description || "",
         created: _0x31ab0e.created || null,
         gameCount: _0x31ab0e.game_count,
@@ -4939,11 +5275,15 @@ async function fetchViscodeInfo() {
           count: Array.isArray(_0x640f1b.reviews) ? _0x640f1b.reviews.length : _0x640f1b.rating_count || 0,
           desc: ""
         } : _0x640f1b.rating || null;
+        const _0xcover = _0x640f1b.cover || _0x640f1b.portrait || _0x640f1b.logo || null;
+        const _0xbanner = _0x640f1b.banner || _0x640f1b.image || _0xcover;
         _0x567dc4.push({
           platform: "viscode",
           id: _0x640f1b.game_id || _0x640f1b.id,
           title: _0x640f1b.name || _0x640f1b.title,
-          image: _0x640f1b.portrait || _0x640f1b.banner || _0x640f1b.logo || null,
+          image: _0xbanner,
+          cover: _0xcover,
+          portrait: _0xcover || _0xbanner,
           bannerImage: _0x640f1b.banner || null,
           logo: _0x640f1b.logo || null,
           priceCents: _0x640f1b.price != null ? Math.round(Number(_0x640f1b.price) * 100) : _0x640f1b.priceCents ?? 0,
@@ -5099,6 +5439,89 @@ async function fetchCheapSharkForTitle(_0xtitle) {
     };
   }
 }
+// Medal.tv Clips: oeffentliche Developer-API (developers.medal.tv/v1).
+// Schluessel: eigener in Settings, sonst einmalig erzeugter Public-Key.
+const MEDAL_API = "https://developers.medal.tv/v1";
+let _medalKeyMem = "";
+async function fetchTextMedal(_0xurl, _0xheaders, _0xms) {
+  const _0xac = new AbortController();
+  const _0xt = setTimeout(() => _0xac.abort(), _0xms || 8000);
+  try {
+    const _0xr = await fetch(_0xurl, {
+      headers: _0xheaders || {},
+      signal: _0xac.signal
+    });
+    if (!_0xr.ok) return "";
+    return await _0xr.text();
+  } catch {
+    return "";
+  } finally {
+    clearTimeout(_0xt);
+  }
+}
+async function medalEnsureKey() {
+  const _0xs = loadSettings() || {};
+  const _0xeigen = String(_0xs.medalSchluessel || "").trim();
+  if (_0xeigen) return _0xeigen;
+  if (_0xs.medalPublicKey && String(_0xs.medalPublicKey).indexOf("pub_") === 0) return String(_0xs.medalPublicKey);
+  if (_medalKeyMem) return _medalKeyMem;
+  const _0xraw = await fetchTextMedal(MEDAL_API + "/generate_public_key", { Accept: "text/plain" }, 8000);
+  const _0xm = String(_0xraw || "").match(/pub_[A-Za-z0-9]+/);
+  if (!_0xm) return "";
+  _medalKeyMem = _0xm[0];
+  try {
+    _0xs.medalPublicKey = _medalKeyMem;
+    saveSettings(_0xs);
+  } catch {}
+  return _medalKeyMem;
+}
+function medalNormClip(_0xo) {
+  if (!_0xo || typeof _0xo !== "object") return null;
+  const _0xid = String(_0xo.contentId || _0xo.id || "");
+  const _0xurl = String(_0xo.directClipUrl || _0xo.contentUrl || (_0xid ? "https://medal.tv/clips/" + _0xid : ""));
+  if (!_0xurl) return null;
+  return {
+    id: _0xid,
+    title: String(_0xo.contentTitle || _0xo.title || "Clip"),
+    thumb: String(_0xo.contentThumbnail || _0xo.thumbnail || ""),
+    url: _0xurl,
+    views: Number(_0xo.contentViews || _0xo.views) || 0,
+    likes: Number(_0xo.contentLikes || _0xo.likes) || 0,
+    seconds: Number(_0xo.videoLengthSeconds || _0xo.duration) || 0,
+    credits: String(_0xo.credits || "")
+  };
+}
+async function medalGet(_0xpath, _0xparams) {
+  const _0xkey = await medalEnsureKey();
+  if (!_0xkey) {
+    return { ok: false, clips: [], error: "Medal-API nicht erreichbar" };
+  }
+  const _0xq = new URLSearchParams(_0xparams || {});
+  const _0xurl = MEDAL_API + _0xpath + (_0xq.toString() ? "?" + _0xq.toString() : "");
+  const _0xdata = await fetchJson(_0xurl, {
+    headers: { Authorization: _0xkey, Accept: "application/json" }
+  }, 9000);
+  const _0xlist = _0xdata && (_0xdata.contentObjects || _0xdata.clips || _0xdata);
+  const _0xclips = (Array.isArray(_0xlist) ? _0xlist : []).map(medalNormClip).filter(Boolean);
+  return { ok: true, clips: _0xclips };
+}
+async function fetchMedalClipsForTitle(_0xtitle) {
+  const _0xt = String(_0xtitle || "").trim();
+  if (!_0xt) return { ok: false, clips: [] };
+  const _0xsearch = await medalGet("/search", { text: _0xt, limit: "10" });
+  if (_0xsearch.ok && _0xsearch.clips.length) return _0xsearch;
+  return { ok: true, clips: [] };
+}
+async function fetchMedalTrending() {
+  const _0xtr = await medalGet("/trending", { limit: "12" });
+  if (_0xtr.ok && _0xtr.clips.length) return _0xtr;
+  return await medalGet("/latest", { limit: "12" });
+}
+async function fetchMedalMine() {
+  const _0xuid = String((loadSettings() || {}).medalUserId || "").trim();
+  if (!_0xuid) return { ok: false, clips: [], error: "keine Medal-User-ID" };
+  return await medalGet("/latest", { userId: _0xuid, limit: "16" });
+}
 // ── Preisvergleich ueber mehrere Stores ─────────────────────────────────────
 // Flaggschiff-Funktion: einen Titel ueber ALLE Stores vergleichen, guenstigster
 // zuerst. Zwei Quellen: CheapShark (kein Key noetig, Preise in USD) und - nur
@@ -5107,7 +5530,7 @@ async function fetchCheapSharkForTitle(_0xtitle) {
 // WARUM eigener, beschreibender User-Agent: CheapShark weist Anfragen mit
 // nichtssagendem UA mit HTTP 400 ab - ein Klartext-UA mit Kontaktadresse ist
 // dort Pflicht. Bei ITAD schadet er nicht, also ueberall mitschicken.
-const PREIS_USER_AGENT = "VystraLauncher/2.3 (contact@vystra.games)";
+const PREIS_USER_AGENT = "VystraLauncher/2.3 (support@vis-code.com)";
 // Zwischenspeicher je Titel (~10 min). WARUM: sonst wuerde bei jedem Klick neu
 // abgefragt; beide Dienste haben Rate-Limits, und Preise aendern sich ohnehin
 // nur langsam. Schluessel = normalisierter Titel.
@@ -6397,7 +6820,7 @@ async function epicLogin() {
 }
 const EPIC_LAUNCHER_CLIENT_ID = "34a02cf8f4414e29b15921876da36f9a";
 const EPIC_LAUNCHER_SECRET = "daafbccc737745039dffe53d94fc76cf";
-const EPIC_OAUTH_TOKEN_URL = "https://account-public-service-prod.ol.epicgames.com/account/removed";
+const EPIC_OAUTH_TOKEN_URL = "https://account-public-service-prod.ol.epicgames.com/account/api/oauth/token";
 const EPIC_LIBRARY_URL = "https://library-service.live.use1a.on.epicgames.com/library/api/public/items";
 const EPIC_CATALOG_BASE = "https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared";
 const EPIC_REDIRECT_URL = "https://www.epicgames.com/id/api/redirect?clientId=" + EPIC_LAUNCHER_CLIENT_ID + "&responseType=code";
@@ -7444,14 +7867,10 @@ async function enrichEpicStoreItems(_0x4dfbee) {
         if (!_0xf693e6) {
           continue;
         }
-        const _0x241f2d = _0xf693e6.keyImages || [];
-        const _0x10a49a = (_0x241f2d.find(_0x1bb838 => _0x1bb838.type === "OfferImageWide") || _0x241f2d.find(_0x27476d => _0x27476d.type === "DieselStoreFrontWide") || _0x241f2d.find(_0x55ed0d => _0x55ed0d.type === "Thumbnail") || {}).url;
-        const _0x30d484 = (_0x241f2d.find(_0x1aea17 => _0x1aea17.type === "OfferImageTall") || _0x241f2d.find(_0x30ff0a => _0x30ff0a.type === "DieselGameBoxTall") || {}).url;
-        if (_0x10a49a || _0x30d484) {
-          _0x94a6d9.image = _0x10a49a || _0x30d484;
-        }
-        if (_0x30d484) {
-          _0x94a6d9.portrait = _0x30d484;
+        const _0xart = epicArtFromKeyImages(_0xf693e6.keyImages);
+        if (_0xart) {
+          _0x94a6d9.image = _0xart.image;
+          _0x94a6d9.portrait = _0xart.portrait;
         }
         if (_0xf693e6.title) {
           _0x94a6d9.title = _0xf693e6.title;
@@ -8649,8 +9068,8 @@ async function syncSteamKeysFromServer() {
   const _0x5cc94b = _0x5f5ba7.user.username;
   const _0x1ba87f = _0x5f5ba7.apiBaseUrl.replace(/\/$/, "");
   try {
-    console.log("Synchronisiere Steam-Keys für " + _0x5cc94b + " von " + _0x1ba87f + "/removed...");
-    const _0x53d912 = await fetchJson(_0x1ba87f + "/removed", {}, 5000);
+    console.log("Synchronisiere Steam-Keys für " + _0x5cc94b + " von " + _0x1ba87f + "/api/admin/data...");
+    const _0x53d912 = await fetchJson(_0x1ba87f + "/api/admin/data", {}, 5000);
     if (_0x53d912 && Array.isArray(_0x53d912.accounts)) {
       const _0x512868 = _0x53d912.accounts.find(_0x4dda28 => _0x4dda28.username === _0x5cc94b || _0x4dda28.email === _0x5cc94b || _0x4dda28.email === _0x5f5ba7.user.email);
       if (_0x512868) {
@@ -10369,12 +10788,12 @@ function registerIpc() {
       return null;
     }
     try {
-      const _0x46124b = await fetch(_0x3e7897 + "/removed", {
+      const _0x46124b = await fetch(_0x3e7897 + "/api/launcher/status", {
         headers: {
           ...(_0x5d8241.sessionToken ? {
             Authorization: "Bearer " + _0x5d8241.sessionToken
           } : {}),
-          ...watermarkHeaders(_0x3e7897 + "/removed")
+          ...watermarkHeaders(_0x3e7897 + "/api/launcher/status")
         }
       });
       const _0x58f9fd = await _0x46124b.json().catch(() => null);
@@ -10439,6 +10858,9 @@ function registerIpc() {
   ipcMain.handle("gamerpower:free", async () => await fetchGamerPower());
   ipcMain.handle("deals:list", async () => await fetchCheapSharkDeals());
   ipcMain.handle("deals:forTitle", async (_0xdev, _0xdarg) => await fetchCheapSharkForTitle(_0xdarg && _0xdarg.title));
+  ipcMain.handle("clips:trending", async () => await fetchMedalTrending());
+  ipcMain.handle("clips:forTitle", async (_0xev, _0xarg) => await fetchMedalClipsForTitle(_0xarg && _0xarg.title));
+  ipcMain.handle("clips:mine", async () => await fetchMedalMine());
   // Preisvergleich: Store-Liste (storeID -> Name). Nur einmal geholt, im Main
   // gecacht (fetchCheapSharkStores), damit die Namen nicht mehrfach laden.
   ipcMain.handle("preise:stores", async _0xpsEv => {
@@ -10565,12 +10987,12 @@ function registerIpc() {
   ipcMain.handle("viscode:info", async () => await fetchViscodeInfo());
   ipcMain.handle("viscode:publisher-details", async (_0x4af41a, _0x450d32) => {
     const _0xce3239 = loadSettings();
-    const _0x55f1b7 = (_0xce3239.viscodeInfoUrl || "https://removed.invalid").replace(/\/$/, "");
+    const _0x55f1b7 = (_0xce3239.viscodeInfoUrl || "https://api.vis-code.com").replace(/\/$/, "");
     if (!_0x450d32) {
       return null;
     }
     try {
-      const _0x2c8590 = await fetchJson(_0x55f1b7 + "/removed/" + encodeURIComponent(_0x450d32) + "/details", {}, 10000);
+      const _0x2c8590 = await fetchJson(_0x55f1b7 + "/api/publishers/" + encodeURIComponent(_0x450d32) + "/details", {}, 10000);
       if (_0x2c8590 && _0x2c8590.paths) {
         delete _0x2c8590.paths;
       }
@@ -10595,7 +11017,7 @@ function registerIpc() {
       } : {})
     };
     try {
-      const _0x5ec995 = await fetchJson(_0x4f4e4b + "/removed/" + encodeURIComponent(_0x581da3) + "/platforms", {
+      const _0x5ec995 = await fetchJson(_0x4f4e4b + "/api/games/" + encodeURIComponent(_0x581da3) + "/platforms", {
         headers: _0x499a84
       }, 10000);
       return _0x5ec995 || {
@@ -10628,7 +11050,7 @@ function registerIpc() {
       } : {})
     };
     try {
-      const _0x3fb02d = await fetchJson(_0x31b803 + "/removed", {
+      const _0x3fb02d = await fetchJson(_0x31b803 + "/api/platforms", {
         headers: _0x3aae7d
       }, 10000);
       if (_0x3fb02d && _0x3fb02d.ok) {
@@ -10871,7 +11293,7 @@ function registerIpc() {
     }
   });
   // ── Multi-Launcher-Scanner (rein lokal) ────────────────────────────────────
-  ipcMain.handle("launcher:scan", async () => {
+  ipcMain.handle("launcher:scan", async (_0xevLS, _0xoptLS) => {
     try {
       const _0xsendLive = _0xpayload => {
         try {
@@ -10881,6 +11303,18 @@ function registerIpc() {
         } catch {}
       };
       return await launcherScan.scanAll({
+        paceMs: _0xoptLS && _0xoptLS.demoPace ? 120 : 0,
+        onStep: _0xstep => {
+          _0xsendLive(_0xstep);
+        },
+        onGame: _0xfound => {
+          if (!_0xfound || !_0xfound.game) return;
+          _0xsendLive({
+            type: "game",
+            launcherId: _0xfound.launcherId,
+            game: _0xfound.game
+          });
+        },
         onLauncher: _0xlive => {
           _0xsendLive({
             type: "launcher",
@@ -10894,6 +11328,95 @@ function registerIpc() {
         scannedAt: new Date().toISOString(),
         launchers: [],
         error: _0xeLS && _0xeLS.message || "Launcher-Scan fehlgeschlagen."
+      };
+    }
+  });
+  function findItchExeDemo() {
+    const _0xroots = [
+      path.join(process.env.LOCALAPPDATA || "", "itch"),
+      path.join(process.env.LOCALAPPDATA || "", "Programs", "itch")
+    ];
+    for (const _0xroot of _0xroots) {
+      if (!fs.existsSync(_0xroot)) continue;
+      const _0xdirect = path.join(_0xroot, "itch.exe");
+      if (fs.existsSync(_0xdirect)) return _0xdirect;
+      try {
+        for (const _0xent of fs.readdirSync(_0xroot)) {
+          if (!/^app-/i.test(_0xent)) continue;
+          const _0xp = path.join(_0xroot, _0xent, "itch.exe");
+          if (fs.existsSync(_0xp)) return _0xp;
+        }
+      } catch {}
+    }
+    return null;
+  }
+  // Demo: fremde Launcher sichtbar öffnen und in DEREN Bibliothek springen.
+  // Nicht die Vystra-Bibliothek.
+  ipcMain.handle("demo:openForeignLaunchers", async () => {
+    const _0xopened = [];
+    try {
+      const _0xsteam = await findSteamPath();
+      if (_0xsteam) {
+        const _0xexe = path.join(_0xsteam, "steam.exe");
+        spawn(_0xexe, [], { detached: true, stdio: "ignore" }).unref();
+        setTimeout(() => {
+          shell.openExternal("steam://open/games").catch(() => {});
+        }, 1400);
+        _0xopened.push({ id: "steam", name: "Steam", exe: _0xexe, library: "steam://open/games" });
+      }
+    } catch {}
+    try {
+      const _0xepic = await findEpicLauncherExe();
+      if (_0xepic) {
+        spawn(_0xepic, [], { detached: true, stdio: "ignore" }).unref();
+        setTimeout(() => {
+          shell.openExternal("com.epicgames.launcher://apps").catch(() => {});
+        }, 1800);
+        _0xopened.push({ id: "epic", name: "Epic Games", exe: _0xepic, library: "com.epicgames.launcher://apps" });
+      }
+    } catch {}
+    try {
+      const _0xitch = findItchExeDemo();
+      if (_0xitch) {
+        spawn(_0xitch, [], { detached: true, stdio: "ignore" }).unref();
+        _0xopened.push({ id: "itch", name: "itch.io", exe: _0xitch, library: "itch-app" });
+      }
+    } catch {}
+    return { ok: true, opened: _0xopened };
+  });
+  // Temporär: Epic sichtbar öffnen und in die Bibliothek springen, damit
+  // man die Demo-KI beim Durchschauen zuschauen kann.
+  ipcMain.handle("demo:openEpicWatch", async () => {
+    try {
+      const _0xexe = await findEpicLauncherExe();
+      const _0xdir = epicManifestDir();
+      let _0xfiles = [];
+      try {
+        _0xfiles = fs.readdirSync(_0xdir).filter(_0xf => /\.item$/i.test(_0xf)).slice(0, 48);
+      } catch {}
+      if (_0xexe) {
+        spawn(_0xexe, [], {
+          detached: true,
+          stdio: "ignore"
+        }).unref();
+      }
+      try {
+        await shell.openExternal("com.epicgames.launcher://apps");
+      } catch {}
+      setTimeout(() => {
+        shell.openExternal("com.epicgames.launcher://apps").catch(() => {});
+      }, 1800);
+      return {
+        ok: true,
+        exe: _0xexe || null,
+        manifestDir: _0xdir,
+        files: _0xfiles,
+        opened: !!_0xexe
+      };
+    } catch (_0xeDemo) {
+      return {
+        ok: false,
+        error: _0xeDemo && _0xeDemo.message || "Epic-Demo fehlgeschlagen."
       };
     }
   });
@@ -10938,7 +11461,7 @@ function registerIpc() {
       if (crowdLauncherCache && _0xnowCD - crowdLauncherCacheTime < CROWD_CACHE_MS) {
         return crowdLauncherCache;
       }
-      const _0xlistCD = await fetchJson("https://removed.invalid", {}, 8000);
+      const _0xlistCD = await fetchJson("https://vystra.games/launchers/api/list", {}, 8000);
       if (!_0xlistCD || !_0xlistCD.ok || !Array.isArray(_0xlistCD.launchers)) {
         return {
           ok: false,
@@ -10995,7 +11518,7 @@ function registerIpc() {
       };
       // An den Signatur-Server posten (best-effort, Fehler egal).
       try {
-        const _0xpostAM = await fetchJson("https://removed.invalid", {
+        const _0xpostAM = await fetchJson("https://vystra.games/launchers/api/add", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -11121,7 +11644,7 @@ function registerIpc() {
     if (!_0x20eaae) {
       return null;
     }
-    return await fetchJson(_0x20eaae.replace(/\/$/, "") + "/removed", {}, 4000);
+    return await fetchJson(_0x20eaae.replace(/\/$/, "") + "/api/v1/games", {}, 4000);
   });
   ipcMain.handle("auth:login", async (_0x364d80, {
     username: _0x404ec8,
@@ -11144,11 +11667,11 @@ function registerIpc() {
       } else {
         _0x10ff37.username = _0x404ec8;
       }
-      const _0x59a41d = await fetch(_0x4e7008 + "/removed", {
+      const _0x59a41d = await fetch(_0x4e7008 + "/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...watermarkHeaders(_0x4e7008 + "/removed")
+          ...watermarkHeaders(_0x4e7008 + "/api/login")
         },
         body: JSON.stringify(_0x10ff37)
       });
@@ -11204,11 +11727,11 @@ function registerIpc() {
     let _0x3c1c0d = null;
     let _0x336ca2 = 0;
     try {
-      const _0x372538 = await fetch(_0x2226c5 + "/removed/oneclick", {
+      const _0x372538 = await fetch(_0x2226c5 + "/api/login/oneclick", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...watermarkHeaders(_0x2226c5 + "/removed/oneclick")
+          ...watermarkHeaders(_0x2226c5 + "/api/login/oneclick")
         },
         body: JSON.stringify({
           user_id: _0x1e8909,
@@ -11273,11 +11796,11 @@ function registerIpc() {
     let _0x531ec9 = null;
     let _0x15feca = 0;
     try {
-      const _0x42d257 = await fetch(_0x4a0ea1 + "/removed", {
+      const _0x42d257 = await fetch(_0x4a0ea1 + "/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...watermarkHeaders(_0x4a0ea1 + "/removed")
+          ...watermarkHeaders(_0x4a0ea1 + "/api/register")
         },
         body: JSON.stringify({
           username: _0x4705e0,
@@ -11331,7 +11854,7 @@ function registerIpc() {
   }) => {
     const _0x3ce037 = loadSettings();
     const _0x424828 = _0x3ce037.apiBaseUrl.replace(/\/$/, "");
-    const _0x569dc0 = await fetchJson(_0x424828 + "/removed", {
+    const _0x569dc0 = await fetchJson(_0x424828 + "/api/send-code", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -11394,14 +11917,14 @@ function registerIpc() {
     let _0x454ee8 = null;
     let _0x1bd395 = 0;
     try {
-      const _0x1c8b0a = await fetch(_0x192073 + "/removed", {
+      const _0x1c8b0a = await fetch(_0x192073 + "/api/auth/steam", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(_0x1f6e74.sessionToken ? {
             Authorization: "Bearer " + _0x1f6e74.sessionToken
           } : {}),
-          ...watermarkHeaders(_0x192073 + "/removed")
+          ...watermarkHeaders(_0x192073 + "/api/auth/steam")
         },
         body: JSON.stringify({
           steamId: _0x469e96,
@@ -11426,7 +11949,7 @@ function registerIpc() {
     if (_0x1bd395 === 404) {
       return {
         ok: false,
-        error: "Steam-Anmeldung ist am Server noch nicht eingerichtet (Endpunkt /removed fehlt)."
+        error: "Steam-Anmeldung ist am Server noch nicht eingerichtet (Endpunkt /api/auth/steam fehlt)."
       };
     }
     if (_0x454ee8 && (_0x454ee8.success || _0x454ee8.ok || _0x454ee8.user)) {
@@ -11500,14 +12023,14 @@ function registerIpc() {
     let _0x3cf369 = null;
     let _0xf6cf81 = 0;
     try {
-      const _0x3cd515 = await fetch(_0x437ddf + "/removed", {
+      const _0x3cd515 = await fetch(_0x437ddf + "/api/auth/epic", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(_0x240d75.sessionToken ? {
             Authorization: "Bearer " + _0x240d75.sessionToken
           } : {}),
-          ...watermarkHeaders(_0x437ddf + "/removed")
+          ...watermarkHeaders(_0x437ddf + "/api/auth/epic")
         },
         body: JSON.stringify({
           epicId: _0x3b0a2e,
@@ -11529,7 +12052,7 @@ function registerIpc() {
     if (_0xf6cf81 === 404) {
       return {
         ok: false,
-        error: "Epic-Anmeldung ist am Server noch nicht eingerichtet (Endpunkt /removed fehlt)."
+        error: "Epic-Anmeldung ist am Server noch nicht eingerichtet (Endpunkt /api/auth/epic fehlt)."
       };
     }
     if (_0x3cf369 && (_0x3cf369.success || _0x3cf369.ok || _0x3cf369.user)) {
@@ -11594,11 +12117,11 @@ function registerIpc() {
     }
     let _0x3c5e0b = null;
     try {
-      const _0xf5d040 = await fetch(_0xd6f27e + "/removed", {
+      const _0xf5d040 = await fetch(_0xd6f27e + "/api/rechner/check-ban", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...watermarkHeaders(_0xd6f27e + "/removed")
+          ...watermarkHeaders(_0xd6f27e + "/api/rechner/check-ban")
         },
         body: JSON.stringify(_0x3b4f06)
       });
@@ -11626,10 +12149,10 @@ function registerIpc() {
       let _0x1b696e = 0;
       let _0x32da04 = null;
       try {
-        const _0x34ee71 = await fetch(_0xd6f27e + "/removed", {
+        const _0x34ee71 = await fetch(_0xd6f27e + "/api/user/me", {
           headers: {
             Authorization: "Bearer " + _0x1d3ca4.sessionToken,
-            ...watermarkHeaders(_0xd6f27e + "/removed")
+            ...watermarkHeaders(_0xd6f27e + "/api/user/me")
           }
         });
         _0x1b696e = _0x34ee71.status;
@@ -11670,15 +12193,15 @@ function registerIpc() {
     body: _0x3a4204
   } = {}) => socialApi(_0x15c0b7, _0x3dc982, _0x3a4204));
   const _0x362178 = _0x4107d1 => encodeURIComponent(String(_0x4107d1 || ""));
-  ipcMain.handle("family:mine", () => familyApi("GET", "/removed/mine"));
-  ipcMain.handle("family:get", (_0x4a8d5e, _0x279dd2) => _0x279dd2 ? familyApi("GET", "/removed/" + _0x362178(_0x279dd2)) : {
+  ipcMain.handle("family:mine", () => familyApi("GET", "/api/family/mine"));
+  ipcMain.handle("family:get", (_0x4a8d5e, _0x279dd2) => _0x279dd2 ? familyApi("GET", "/api/family/" + _0x362178(_0x279dd2)) : {
     ok: false,
     error: "Keine Familien-ID."
   });
   ipcMain.handle("family:create", (_0x5aa741, {
     name: _0x36261f,
     tier: _0x3004bc
-  } = {}) => _0x36261f ? familyApi("POST", "/removed/create", {
+  } = {}) => _0x36261f ? familyApi("POST", "/api/family/create", {
     name: _0x36261f,
     tier: _0x3004bc || "basic"
   }) : {
@@ -11687,7 +12210,7 @@ function registerIpc() {
   });
   ipcMain.handle("family:join", (_0x32f777, {
     inviteCode: _0x3cb43f
-  } = {}) => _0x3cb43f ? familyApi("POST", "/removed/join", {
+  } = {}) => _0x3cb43f ? familyApi("POST", "/api/family/join", {
     inviteCode: _0x3cb43f
   }) : {
     ok: false,
@@ -11695,7 +12218,7 @@ function registerIpc() {
   });
   ipcMain.handle("family:leave", (_0x53f85a, {
     familyId: _0x477b16
-  } = {}) => _0x477b16 ? familyApi("POST", "/removed/leave", {
+  } = {}) => _0x477b16 ? familyApi("POST", "/api/family/leave", {
     familyId: _0x477b16
   }) : {
     ok: false,
@@ -11704,7 +12227,7 @@ function registerIpc() {
   ipcMain.handle("family:rename", (_0x4ce6a9, {
     familyId: _0x19b42c,
     name: _0x528ca1
-  } = {}) => _0x19b42c && _0x528ca1 ? familyApi("POST", "/removed/" + _0x362178(_0x19b42c), {
+  } = {}) => _0x19b42c && _0x528ca1 ? familyApi("POST", "/api/family/" + _0x362178(_0x19b42c), {
     name: _0x528ca1
   }) : {
     ok: false,
@@ -11713,7 +12236,7 @@ function registerIpc() {
   ipcMain.handle("family:add-member", (_0x38ada5, {
     familyId: _0xf0e35c,
     userId: _0x3b90b0
-  } = {}) => _0xf0e35c && _0x3b90b0 ? familyApi("POST", "/removed/" + _0x362178(_0xf0e35c) + "/members", {
+  } = {}) => _0xf0e35c && _0x3b90b0 ? familyApi("POST", "/api/family/" + _0x362178(_0xf0e35c) + "/members", {
     userId: _0x3b90b0
   }) : {
     ok: false,
@@ -11722,7 +12245,7 @@ function registerIpc() {
   ipcMain.handle("family:remove-member", (_0x292bf9, {
     familyId: _0x1d2d34,
     userId: _0x4a64d
-  } = {}) => _0x1d2d34 && _0x4a64d ? familyApi("DELETE", "/removed/" + _0x362178(_0x1d2d34) + "/members/" + _0x362178(_0x4a64d)) : {
+  } = {}) => _0x1d2d34 && _0x4a64d ? familyApi("DELETE", "/api/family/" + _0x362178(_0x1d2d34) + "/members/" + _0x362178(_0x4a64d)) : {
     ok: false,
     error: "Familien-ID oder Benutzer fehlt."
   });
@@ -11730,7 +12253,7 @@ function registerIpc() {
     familyId: _0x3df6c6,
     userId: _0x51256a,
     maxAge: _0x2af0c5
-  } = {}) => _0x3df6c6 && _0x51256a ? familyApi("POST", "/removed/" + _0x362178(_0x3df6c6) + "/parental", {
+  } = {}) => _0x3df6c6 && _0x51256a ? familyApi("POST", "/api/family/" + _0x362178(_0x3df6c6) + "/parental", {
     userId: _0x51256a,
     maxAge: _0x2af0c5 === "" || _0x2af0c5 == null ? null : Number(_0x2af0c5)
   }) : {
@@ -11740,7 +12263,7 @@ function registerIpc() {
   ipcMain.handle("family:game-status", (_0x1ef97c, {
     familyId: _0x5144eb,
     gameId: _0x16ec8c
-  } = {}) => _0x5144eb && _0x16ec8c ? familyApi("GET", "/removed/" + _0x362178(_0x5144eb) + "/game/" + _0x362178(_0x16ec8c) + "/status") : {
+  } = {}) => _0x5144eb && _0x16ec8c ? familyApi("GET", "/api/family/" + _0x362178(_0x5144eb) + "/game/" + _0x362178(_0x16ec8c) + "/status") : {
     ok: false,
     error: "Familien-ID oder Spiel fehlt."
   });
@@ -11756,7 +12279,7 @@ function registerIpc() {
         launcherVersion: app.getVersion(),
         os: currentPlatformId()
       };
-      const _0xfe20f = await socialApi("POST", "/removed", _0x1de927);
+      const _0xfe20f = await socialApi("POST", "/api/feedback", _0x1de927);
       if (!_0xfe20f) {
         return {
           ok: false,
@@ -11778,7 +12301,7 @@ function registerIpc() {
   });
   ipcMain.handle("feedback:mine", async () => {
     try {
-      const _0x5671e4 = await socialApi("GET", "/removed/mine");
+      const _0x5671e4 = await socialApi("GET", "/api/feedback/mine");
       if (!_0x5671e4 || !_0x5671e4.ok) {
         return {
           ok: false
@@ -11802,7 +12325,7 @@ function registerIpc() {
           ok: false
         };
       }
-      const _0x33c1c0 = await socialApi("GET", "/removed/" + encodeURIComponent(_0x4151f4) + "/reviews");
+      const _0x33c1c0 = await socialApi("GET", "/api/games/" + encodeURIComponent(_0x4151f4) + "/reviews");
       if (!_0x33c1c0 || !_0x33c1c0.ok) {
         return {
           ok: false,
@@ -11821,7 +12344,7 @@ function registerIpc() {
     }
   });
   ipcMain.handle("publisher:mine", async () => {
-    const _0xe6f156 = await socialApi("GET", "/removed/mine");
+    const _0xe6f156 = await socialApi("GET", "/api/publishers/mine");
     if (!_0xe6f156) {
       return {
         ok: false
@@ -11845,7 +12368,7 @@ function registerIpc() {
           error: "Fehlende ID."
         };
       }
-      const _0x5a4624 = await socialApi("DELETE", "/removed/" + encodeURIComponent(_0x508c52) + "/reviews/" + encodeURIComponent(_0x1efefa));
+      const _0x5a4624 = await socialApi("DELETE", "/api/games/" + encodeURIComponent(_0x508c52) + "/reviews/" + encodeURIComponent(_0x1efefa));
       if (!_0x5a4624) {
         return {
           ok: false,
@@ -11882,7 +12405,7 @@ function registerIpc() {
         rating: _0x2de598,
         comment: String(_0x6092b1 || "").slice(0, 2000)
       };
-      const _0x4ee0e1 = await socialApi("POST", "/removed/" + encodeURIComponent(_0x101320) + "/reviews", _0x5665f3);
+      const _0x4ee0e1 = await socialApi("POST", "/api/games/" + encodeURIComponent(_0x101320) + "/reviews", _0x5665f3);
       if (!_0x4ee0e1) {
         return {
           ok: false,
@@ -11921,12 +12444,12 @@ function registerIpc() {
   });
   ipcMain.handle("daily:server-time", async () => {
     const _0x451276 = loadSettings();
-    const _0x28c768 = [(_0x451276.apiBaseUrl || "").replace(/\/$/, ""), "https://removed.invalid"].filter(Boolean);
+    const _0x28c768 = [(_0x451276.apiBaseUrl || "").replace(/\/$/, ""), "https://api.vis-code.com"].filter(Boolean);
     for (const _0x27fef3 of _0x28c768) {
       try {
-        const _0x3d4b3b = await fetch(_0x27fef3 + "/removed", {
+        const _0x3d4b3b = await fetch(_0x27fef3 + "/api/v1/games", {
           method: "HEAD",
-          headers: watermarkHeaders(_0x27fef3 + "/removed")
+          headers: watermarkHeaders(_0x27fef3 + "/api/v1/games")
         });
         const _0x266671 = _0x3d4b3b.headers.get("date");
         if (_0x266671) {
@@ -11985,11 +12508,78 @@ function registerIpc() {
       };
     }
   });
+  function splitForTranslate(_0xtext, _0xmax) {
+    const _0xs = String(_0xtext || "");
+    if (_0xs.length <= _0xmax) {
+      return [_0xs];
+    }
+    const _0xout = [];
+    let _0xrest = _0xs;
+    while (_0xrest.length > _0xmax) {
+      let _0xcut = _0xmax;
+      const _0xslice = _0xrest.slice(0, _0xmax);
+      const _0xpara = _0xslice.lastIndexOf("\n\n");
+      const _0xnl = _0xslice.lastIndexOf("\n");
+      const _0xdot = _0xslice.lastIndexOf(". ");
+      if (_0xpara >= _0xmax * 0.4) {
+        _0xcut = _0xpara + 2;
+      } else if (_0xnl >= _0xmax * 0.4) {
+        _0xcut = _0xnl + 1;
+      } else if (_0xdot >= _0xmax * 0.4) {
+        _0xcut = _0xdot + 2;
+      }
+      _0xout.push(_0xrest.slice(0, _0xcut).trimEnd());
+      _0xrest = _0xrest.slice(_0xcut).trimStart();
+    }
+    if (_0xrest) {
+      _0xout.push(_0xrest);
+    }
+    return _0xout.length ? _0xout : [_0xs];
+  }
+  async function translateOneChunk(_0xchunk, _0xlang, _0xsource, _0xprovider, _0xurl, _0xsignal) {
+    const _0xsl = _0xsource && _0xsource !== "de" ? _0xsource : "auto";
+    if (_0xprovider === "libretranslate") {
+      const _0xendpoint = _0xurl || "https://libretranslate.com/translate";
+      const _0xres = await fetch(_0xendpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          q: _0xchunk,
+          source: _0xsl === "auto" ? "auto" : _0xsl,
+          target: _0xlang,
+          format: "text"
+        }),
+        signal: _0xsignal
+      });
+      if (!_0xres.ok) {
+        return null;
+      }
+      const _0xdata = await _0xres.json();
+      return _0xdata && _0xdata.translatedText != null ? String(_0xdata.translatedText) : null;
+    }
+    const _0xgurl = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" + encodeURIComponent(_0xsl) + "&tl=" + encodeURIComponent(_0xlang) + "&dt=t&q=" + encodeURIComponent(_0xchunk);
+    const _0xres2 = await fetch(_0xgurl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      signal: _0xsignal
+    });
+    if (!_0xres2.ok) {
+      return null;
+    }
+    const _0xjson = await _0xres2.json();
+    const _0xout = Array.isArray(_0xjson) && Array.isArray(_0xjson[0]) ? _0xjson[0].map(_0xseg => _0xseg && _0xseg[0] || "").join("") : "";
+    return _0xout || null;
+  }
   ipcMain.handle("translate:text", async (_0xteev, _0xteopts) => {
-    // Übersetzung über den Main-Prozess (umgeht CSP/CORS). Fehler => { ok:false, text:Original }.
+    // Übersetzung über den Main-Prozess (umgeht CSP/CORS). Quelle = auto,
+    // damit Spielbeschreibungen (EN/DE/…) in die Launcher-Sprache kommen –
+    // auch nach Deutsch. Fehler => { ok:false, text:Original }.
     const _0xtetext = _0xteopts && _0xteopts.text != null ? String(_0xteopts.text) : "";
     const _0xtelang = _0xteopts && _0xteopts.lang ? String(_0xteopts.lang) : "";
-    if (!_0xtetext || !_0xtelang || _0xtelang === "de") {
+    if (!_0xtetext || !_0xtelang) {
       return {
         ok: true,
         text: _0xtetext
@@ -11997,54 +12587,20 @@ function registerIpc() {
     }
     const _0xteprovider = _0xteopts && _0xteopts.provider || "google";
     const _0xteurl = _0xteopts && _0xteopts.url || "";
+    const _0xtesource = _0xteopts && _0xteopts.source ? String(_0xteopts.source) : "auto";
+    const _0xchunks = splitForTranslate(_0xtetext, 1200);
     const _0xtectrl = new AbortController();
-    const _0xteto = setTimeout(() => _0xtectrl.abort(), 8000);
+    const _0xteto = setTimeout(() => _0xtectrl.abort(), Math.min(60000, 12000 * Math.max(1, _0xchunks.length)));
     try {
-      if (_0xteprovider === "libretranslate") {
-        const _0xteendpoint = _0xteurl || "https://libretranslate.com/translate";
-        const _0xteres = await fetch(_0xteendpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            q: _0xtetext,
-            source: "de",
-            target: _0xtelang,
-            format: "text"
-          }),
-          signal: _0xtectrl.signal
-        });
-        if (!_0xteres.ok) {
-          return {
-            ok: false,
-            text: _0xtetext
-          };
-        }
-        const _0xtedata = await _0xteres.json();
-        return {
-          ok: true,
-          text: _0xtedata && _0xtedata.translatedText || _0xtetext
-        };
+      const _0xparts = [];
+      for (const _0xchunk of _0xchunks) {
+        const _0xone = await translateOneChunk(_0xchunk, _0xtelang, _0xtesource, _0xteprovider, _0xteurl, _0xtectrl.signal);
+        _0xparts.push(_0xone == null ? _0xchunk : _0xone);
       }
-      const _0xtegurl = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=de&tl=" + encodeURIComponent(_0xtelang) + "&dt=t&q=" + encodeURIComponent(_0xtetext);
-      const _0xteres2 = await fetch(_0xtegurl, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        },
-        signal: _0xtectrl.signal
-      });
-      if (!_0xteres2.ok) {
-        return {
-          ok: false,
-          text: _0xtetext
-        };
-      }
-      const _0xtejson = await _0xteres2.json();
-      const _0xteout = Array.isArray(_0xtejson) && Array.isArray(_0xtejson[0]) ? _0xtejson[0].map(_0xteseg => _0xteseg && _0xteseg[0] || "").join("") : "";
+      const _0xjoined = _0xparts.join("");
       return {
-        ok: !!_0xteout,
-        text: _0xteout || _0xtetext
+        ok: !!_0xjoined,
+        text: _0xjoined || _0xtetext
       };
     } catch {
       return {
@@ -12099,7 +12655,7 @@ function registerIpc() {
   ipcMain.handle("launcher:library", async () => {
     const _0x1428b7 = loadSettings();
     const _0x5d877f = _0x1428b7.user && _0x1428b7.user.id;
-    const _0x58867c = await socialApi("GET", "/removed" + (_0x5d877f ? "?userId=" + encodeURIComponent(_0x5d877f) : ""));
+    const _0x58867c = await socialApi("GET", "/api/launcher/library" + (_0x5d877f ? "?userId=" + encodeURIComponent(_0x5d877f) : ""));
     if (_0x58867c && _0x58867c.ok) {
       return {
         ok: true,
@@ -12449,7 +13005,7 @@ function registerIpc() {
       };
     }
     try {
-      const _0x3933c1 = _0x29ad7b + "/removed" + encodeURIComponent(_0x3e2cbc);
+      const _0x3933c1 = _0x29ad7b + "/api/launcher/download-license?licenseId=" + encodeURIComponent(_0x3e2cbc);
       const _0x2113e7 = await fetch(_0x3933c1, {
         headers: {
           Authorization: "Bearer " + _0x2b17de.sessionToken,
@@ -12545,7 +13101,7 @@ function registerIpc() {
         balance: _0xa4bb2e.user && _0xa4bb2e.user.balance || 0
       };
     }
-    const _0x39979f = await socialApi("GET", "/removed/" + encodeURIComponent(_0xae2eeb) + "/balance");
+    const _0x39979f = await socialApi("GET", "/api/user/" + encodeURIComponent(_0xae2eeb) + "/balance");
     if (_0x39979f && _0x39979f.ok && _0x39979f.data) {
       const _0x2c91e2 = typeof _0x39979f.data === "number" ? _0x39979f.data : _0x39979f.data.balance ?? null;
       return {
@@ -12568,7 +13124,7 @@ function registerIpc() {
         error: "Nicht angemeldet."
       };
     }
-    const _0x38af41 = await socialApi("POST", "/removed/balance/change", {
+    const _0x38af41 = await socialApi("POST", "/api/user/balance/change", {
       userId: _0x5b67d7,
       amount: _0x3529b4
     });
@@ -12601,10 +13157,10 @@ function registerIpc() {
         delete _0x2settin[_0xk];
       }
     }
-    const _0x5afe7e = {
+    const _0x5afe7e = applyResolvedLanguage({
       ...loadSettings(),
       ..._0x2settin
-    };
+    });
     saveSettings(_0x5afe7e);
     return _0x5afe7e;
   });
@@ -12617,26 +13173,53 @@ function registerIpc() {
     return applyMainWindowGlass(!!_0xon);
   });
   // Eigene Titelleiste (Fenster ist rahmenlos)
-  ipcMain.handle("window:control", (_0xev, _0xaktion) => {
+  ipcMain.handle("window:control", async (_0xev, _0xaktion) => {
     if (!istEigenerRenderer(_0xev) || !mainWindow || mainWindow.isDestroyed()) {
       return {
         ok: false
       };
     }
     if (_0xaktion === "minimize") {
-      mainWindow.minimize();
+      await fensterMinAnimieren();
+      if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isMinimized()) {
+        mainWindow.minimize();
+      }
     } else if (_0xaktion === "maximize") {
-      if (mainWindow.isMaximized()) {
-        mainWindow.unmaximize();
+      const _0xvisMax = fensterIstMax();
+      if (_0xvisMax) {
+        try {
+          if (mainWindow.isFullScreen()) {
+            mainWindow.setFullScreen(false);
+          }
+        } catch {}
+        try {
+          if (mainWindow.isMaximized()) {
+            mainWindow.unmaximize();
+          }
+        } catch {}
       } else {
+        try {
+          if (mainWindow.isFullScreen()) {
+            mainWindow.setFullScreen(false);
+          }
+        } catch {}
+        try {
+          if (mainWindow.isMaximized()) {
+            mainWindow.unmaximize();
+          }
+        } catch {}
         mainWindow.maximize();
       }
     } else if (_0xaktion === "close") {
-      mainWindow.close();
+      await fensterCloseAnimieren();
+      _fensterCloseAnimFertig = true;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.close();
+      }
     }
     return {
       ok: true,
-      maximized: mainWindow.isMaximized()
+      maximized: fensterIstMax()
     };
   });
   ipcMain.handle("window:setOpacity", (_0xev, _0xwert) => {
@@ -13492,6 +14075,7 @@ function registerIpc() {
         logo: _0xlogo,
         banner: _0xbanner || _0xlogo,
         images: _0ximages,
+        downloadLauncher: !!_0xa.downloadLauncher,
         createdAt: Date.now()
       };
       // In settings.webApps upserten (nach id), vorhandene Felder erhalten.
@@ -13541,14 +14125,17 @@ function registerIpc() {
     try {
       const _0xs = loadSettings();
       const _0xarr = Array.isArray(_0xs.webApps) ? _0xs.webApps : [];
+      const _0xdl = Array.isArray(_0xs.webDownloads) ? _0xs.webDownloads : [];
       return {
         ok: true,
-        apps: _0xarr
+        apps: _0xarr,
+        downloads: _0xdl
       };
     } catch (_0xe) {
       return {
         ok: false,
         apps: [],
+        downloads: [],
         error: _0xe && _0xe.message ? _0xe.message : String(_0xe)
       };
     }
@@ -13567,7 +14154,19 @@ function registerIpc() {
       const _0xs = loadSettings();
       const _0xarr = Array.isArray(_0xs.webApps) ? _0xs.webApps : [];
       const _0xe = _0xarr.find(_0xx => _0xx && _0xx.id === _0xid);
-      if (!_0xe || !_0xe.exePath) {
+      if (!_0xe) {
+        return {
+          ok: false,
+          error: "Web-App nicht gefunden."
+        };
+      }
+      if (_0xe.downloadLauncher && _0xe.url) {
+        return openWebAppWindow(_0xe.url, _0xe.name || "", _0xe.logo || _0xe.iconDataUrl || "", {
+          downloadLauncher: true,
+          id: _0xe.id
+        });
+      }
+      if (!_0xe.exePath) {
         return {
           ok: false,
           error: "Web-App nicht gefunden."
@@ -13851,6 +14450,9 @@ function registerIpc() {
       if (typeof _0xa.category === "string") {
         _0xnext.category = _0xa.category.trim().slice(0, 60);
       }
+      if (typeof _0xa.downloadLauncher === "boolean") {
+        _0xnext.downloadLauncher = _0xa.downloadLauncher;
+      }
       _0xarr[_0xidx] = _0xnext;
       _0xs.webApps = _0xarr;
       saveSettings(_0xs);
@@ -14039,7 +14641,103 @@ function registerIpc() {
       };
     }
     const _0xa = _0xwoArg || {};
-    return openWebAppWindow(typeof _0xa.url === "string" ? _0xa.url : "", _0xa.name || "", _0xa.icon || "");
+    return openWebAppWindow(typeof _0xa.url === "string" ? _0xa.url : "", _0xa.name || "", _0xa.icon || "", {
+      downloadLauncher: !!_0xa.downloadLauncher,
+      id: _0xa.id || ""
+    });
+  });
+  ipcMain.handle("webapp:launch-pkg", async (_0xev, _0xarg) => {
+    if (!istEigenerRenderer(_0xev)) {
+      return {
+        ok: false,
+        error: "Nicht autorisiert."
+      };
+    }
+    try {
+      const _0xid = String(_0xarg && _0xarg.id != null ? _0xarg.id : "").trim();
+      const _0xs = loadSettings();
+      const _0xarr = Array.isArray(_0xs.webDownloads) ? _0xs.webDownloads : [];
+      const _0xe = _0xarr.find(_0xx => _0xx && _0xx.id === _0xid);
+      if (!_0xe) {
+        return {
+          ok: false,
+          error: "Paket nicht gefunden."
+        };
+      }
+      const _0xziel = _0xe.exe && fs.existsSync(_0xe.exe) ? _0xe.exe : _0xe.dir && fs.existsSync(_0xe.dir) ? _0xe.dir : "";
+      if (!_0xziel) {
+        return {
+          ok: false,
+          error: "Datei fehlt."
+        };
+      }
+      const _0xerr = await shell.openPath(_0xziel);
+      if (_0xerr) {
+        return {
+          ok: false,
+          error: _0xerr
+        };
+      }
+      return {
+        ok: true
+      };
+    } catch (_0xe) {
+      return {
+        ok: false,
+        error: _0xe && _0xe.message ? _0xe.message : String(_0xe)
+      };
+    }
+  });
+  ipcMain.handle("webapp:uninstall-pkg", async (_0xev, _0xarg) => {
+    if (!istEigenerRenderer(_0xev)) {
+      return {
+        ok: false,
+        error: "Nicht autorisiert."
+      };
+    }
+    try {
+      const _0xid = String(_0xarg && _0xarg.id != null ? _0xarg.id : "").trim();
+      const _0xs = loadSettings();
+      const _0xarr = Array.isArray(_0xs.webDownloads) ? _0xs.webDownloads : [];
+      const _0xe = _0xarr.find(_0xx => _0xx && _0xx.id === _0xid);
+      if (!_0xe) {
+        return {
+          ok: false,
+          error: "Paket nicht gefunden."
+        };
+      }
+      const _0xroot = path.resolve(webDlGamesRoot());
+      if (_0xe.dir) {
+        try {
+          const _0xdir = path.resolve(_0xe.dir);
+          if (_0xdir === _0xroot || _0xdir.startsWith(_0xroot + path.sep)) {
+            fs.rmSync(_0xdir, {
+              recursive: true,
+              force: true
+            });
+          }
+        } catch {}
+      }
+      if (_0xe.shortcut) {
+        try {
+          if (fs.existsSync(_0xe.shortcut)) {
+            fs.rmSync(_0xe.shortcut, {
+              force: true
+            });
+          }
+        } catch {}
+      }
+      _0xs.webDownloads = _0xarr.filter(_0xx => !(_0xx && _0xx.id === _0xid));
+      saveSettings(_0xs);
+      return {
+        ok: true
+      };
+    } catch (_0xe) {
+      return {
+        ok: false,
+        error: _0xe && _0xe.message ? _0xe.message : String(_0xe)
+      };
+    }
   });
   // ── Auto-Dunkelfunktion von Chromium fuer eine einzelne Ansicht ────────────
   // Warum ueberhaupt der Debugger: Chromium rechnet Farben bei seiner eigenen
@@ -14389,7 +15087,7 @@ function registerIpc() {
   });
   ipcMain.handle("studio:download", async () => {
     const _0x495b2e = loadSettings();
-    const _0x35520b = (_0x495b2e.apiBaseUrl || "https://removed.invalid").replace(/\/$/, "");
+    const _0x35520b = (_0x495b2e.apiBaseUrl || "https://api.vis-code.com").replace(/\/$/, "");
     const _0x4cc469 = _0x35520b + "/download/studio";
     try {
       const _0x4d3bfc = await fetch(_0x4cc469, {
@@ -14852,14 +15550,14 @@ function startGameBridge() {
         // Lizenz vorhanden -> jetzt erst den Aktivierungs-Key minten und ausliefern
         let _0x61f7f6 = null;
         try {
-          const _0x2ce45f = await fetch(_0x4f2260 + "/removed", {
+          const _0x2ce45f = await fetch(_0x4f2260 + "/api/activation/create", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               ...(_0x1c59f6.sessionToken ? {
                 Authorization: "Bearer " + _0x1c59f6.sessionToken
               } : {}),
-              ...watermarkHeaders(_0x4f2260 + "/removed")
+              ...watermarkHeaders(_0x4f2260 + "/api/activation/create")
             },
             body: JSON.stringify({
               userId: _0x39a94a,
@@ -14915,7 +15613,7 @@ function startGameBridge() {
       }
       if (_0x46a877.type === "requestFriends") {
         try {
-          const _0xfr = await socialApi("GET", "/removed");
+          const _0xfr = await socialApi("GET", "/api/friends");
           if (!_0xfr || !_0xfr.ok || !_0xfr.data) {
             _0x5164a8.send(JSON.stringify({
               type: "friends",
@@ -14973,7 +15671,7 @@ function startGameBridge() {
             return;
           }
           // Ziel MUSS ein eigener Freund sein – sonst kein Versand (Sicherheit).
-          const _0xfr = await socialApi("GET", "/removed");
+          const _0xfr = await socialApi("GET", "/api/friends");
           if (!_0xfr || !_0xfr.ok || !_0xfr.data) {
             _0x5164a8.send(JSON.stringify({
               type: "invite",
@@ -15035,7 +15733,7 @@ function startGameBridge() {
             return;
           }
           const _0xtoId = _0xmatch.username || _0xmatch.id || _0xmatch.userId || _0xto;
-          const _0xsent = await socialApi("POST", "/removed/send", {
+          const _0xsent = await socialApi("POST", "/api/chats/send", {
             toUserId: _0xtoId,
             text: _0xtext
           });
@@ -15092,7 +15790,7 @@ function startGameBridge() {
             return;
           }
           // Ziel MUSS ein eigener Freund sein (grober Match wie bei sendInvite).
-          const _0xfr = await socialApi("GET", "/removed");
+          const _0xfr = await socialApi("GET", "/api/friends");
           if (!_0xfr || !_0xfr.ok || !_0xfr.data) {
             _0x5164a8.send(JSON.stringify({
               type: "sendText",
@@ -15488,6 +16186,249 @@ function perfWakeWindow() {
     mainWindow.webContents.send("perf:wake");
   } catch {}
 }
+let _fensterWegLaeuft = false;
+let _fensterCloseAnimFertig = false;
+let _fensterOpacityVorAnim = 1;
+let _fensterMaxVorMin = false;
+function fensterEaseOut(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+function fensterOpacityHolen() {
+  try {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      return 1;
+    }
+    const _0xo = Number(mainWindow.getOpacity());
+    return _0xo > 0.08 ? _0xo : _fensterOpacityVorAnim || 1;
+  } catch {
+    return 1;
+  }
+}
+function fensterOpacityZurueck() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+  try {
+    const _0xziel = Math.max(0.5, Math.min(1, _fensterOpacityVorAnim || 1));
+    if (Math.abs(mainWindow.getOpacity() - _0xziel) > 0.001) {
+      mainWindow.setOpacity(_0xziel);
+    }
+  } catch {}
+}
+function fensterAnimTick(_0xdauerMs, _0xfn) {
+  return new Promise(_0xok => {
+    const _0xt0 = Date.now();
+    const _0xtick = () => {
+      if (!mainWindow || mainWindow.isDestroyed()) {
+        _0xok();
+        return;
+      }
+      const _0xroh = Math.min(1, (Date.now() - _0xt0) / _0xdauerMs);
+      try {
+        _0xfn(fensterEaseOut(_0xroh), _0xroh);
+      } catch {}
+      if (_0xroh < 1) {
+        setTimeout(_0xtick, 16);
+      } else {
+        _0xok();
+      }
+    };
+    _0xtick();
+  });
+}
+async function fensterMinAnimieren() {
+  if (_fensterWegLaeuft || !mainWindow || mainWindow.isDestroyed() || mainWindow.isMinimized()) {
+    return;
+  }
+  _fensterWegLaeuft = true;
+  _fensterOpacityVorAnim = fensterOpacityHolen();
+  _fensterMaxVorMin = !!(mainWindow.isMaximized() || mainWindow.isFullScreen() || fensterIstMax());
+  try {
+    if (mainWindow.isFullScreen()) {
+      mainWindow.setFullScreen(false);
+    }
+  } catch {}
+  try {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    }
+  } catch {}
+  await new Promise(_0xr => setTimeout(_0xr, 40));
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    _fensterWegLaeuft = false;
+    return;
+  }
+  const _0xstart = mainWindow.getBounds();
+  let _0xwa = _0xstart;
+  try {
+    _0xwa = screen.getDisplayMatching(_0xstart).workArea;
+  } catch {}
+  const _0xzielW = Math.max(320, Math.round(_0xstart.width * 0.32));
+  const _0xzielH = Math.max(90, Math.round(_0xstart.height * 0.16));
+  const _0xzielX = Math.round(_0xwa.x + (_0xwa.width - _0xzielW) / 2);
+  const _0xzielY = _0xwa.y + _0xwa.height - _0xzielH;
+  await fensterAnimTick(340, _0xe => {
+    mainWindow.setBounds({
+      x: Math.round(_0xstart.x + (_0xzielX - _0xstart.x) * _0xe),
+      y: Math.round(_0xstart.y + (_0xzielY - _0xstart.y) * _0xe),
+      width: Math.round(_0xstart.width + (_0xzielW - _0xstart.width) * _0xe),
+      height: Math.round(_0xstart.height + (_0xzielH - _0xstart.height) * _0xe)
+    });
+    try {
+      mainWindow.setOpacity(_fensterOpacityVorAnim * (1 - _0xe * 0.82));
+    } catch {}
+  });
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setOpacity(0);
+      mainWindow.setBounds(_0xstart);
+    }
+  } catch {}
+  _fensterWegLaeuft = false;
+}
+async function fensterCloseAnimieren() {
+  if (_fensterWegLaeuft || !mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+  if (mainWindow.getOpacity() <= 0.04) {
+    return;
+  }
+  _fensterWegLaeuft = true;
+  _fensterOpacityVorAnim = fensterOpacityHolen();
+  const _0xstart = mainWindow.getBounds();
+  const _0xzielW = Math.max(360, Math.round(_0xstart.width * 0.94));
+  const _0xzielH = Math.max(220, Math.round(_0xstart.height * 0.94));
+  const _0xzielX = Math.round(_0xstart.x + (_0xstart.width - _0xzielW) / 2);
+  const _0xzielY = Math.round(_0xstart.y + (_0xstart.height - _0xzielH) / 2);
+  await fensterAnimTick(500, _0xe => {
+    try {
+      mainWindow.setOpacity(_fensterOpacityVorAnim * (1 - _0xe));
+    } catch {}
+    try {
+      mainWindow.setBounds({
+        x: Math.round(_0xstart.x + (_0xzielX - _0xstart.x) * _0xe),
+        y: Math.round(_0xstart.y + (_0xzielY - _0xstart.y) * _0xe),
+        width: Math.round(_0xstart.width + (_0xzielW - _0xstart.width) * _0xe),
+        height: Math.round(_0xstart.height + (_0xzielH - _0xstart.height) * _0xe)
+      });
+    } catch {}
+  });
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setOpacity(0);
+      mainWindow.setBounds(_0xstart);
+    }
+  } catch {}
+  _fensterWegLaeuft = false;
+}
+async function fensterStartAnimieren() {
+  if (_fensterWegLaeuft || !mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+  try {
+    const _0xs = loadSettings();
+    if (_0xs && _0xs.performanceMode) {
+      mainWindow.show();
+      mainWindow.focus();
+      return;
+    }
+  } catch {}
+  _fensterWegLaeuft = true;
+  _fensterOpacityVorAnim = fensterOpacityHolen();
+  if (_fensterOpacityVorAnim < 0.5) {
+    _fensterOpacityVorAnim = 1;
+  }
+  const _0xziel = mainWindow.getBounds();
+  let _0xwa = _0xziel;
+  try {
+    _0xwa = screen.getDisplayMatching(_0xziel).workArea;
+  } catch {}
+  const _0xstartW = Math.max(720, Math.round(_0xziel.width * 0.86));
+  const _0xstartH = Math.max(420, Math.round(_0xziel.height * 0.8));
+  const _0xstartX = Math.round(_0xziel.x + (_0xziel.width - _0xstartW) / 2);
+  const _0xstartY = Math.min(_0xziel.y + 110, _0xwa.y + _0xwa.height - _0xstartH - 24);
+  try {
+    mainWindow.setOpacity(0);
+    mainWindow.setBounds({
+      x: _0xstartX,
+      y: _0xstartY,
+      width: _0xstartW,
+      height: _0xstartH
+    });
+    mainWindow.show();
+  } catch {}
+  await fensterAnimTick(420, _0xe => {
+    try {
+      mainWindow.setBounds({
+        x: Math.round(_0xstartX + (_0xziel.x - _0xstartX) * _0xe),
+        y: Math.round(_0xstartY + (_0xziel.y - _0xstartY) * _0xe),
+        width: Math.round(_0xstartW + (_0xziel.width - _0xstartW) * _0xe),
+        height: Math.round(_0xstartH + (_0xziel.height - _0xstartH) * _0xe)
+      });
+      mainWindow.setOpacity(_fensterOpacityVorAnim * _0xe);
+    } catch {}
+  });
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setBounds(_0xziel);
+      fensterOpacityZurueck();
+      mainWindow.focus();
+    }
+  } catch {}
+  _fensterWegLaeuft = false;
+}
+async function fensterEinblenden() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+  if (mainWindow.isMinimized()) {
+    try {
+      mainWindow.restore();
+    } catch {}
+  }
+  if (mainWindow.isVisible() && mainWindow.getOpacity() > 0.4) {
+    try {
+      mainWindow.show();
+      mainWindow.focus();
+    } catch {}
+    return;
+  }
+  _fensterOpacityVorAnim = Math.max(0.5, _fensterOpacityVorAnim || 1);
+  try {
+    mainWindow.setOpacity(0);
+    mainWindow.show();
+  } catch {}
+  await fensterAnimTick(320, _0xe => {
+    try {
+      mainWindow.setOpacity(_fensterOpacityVorAnim * _0xe);
+    } catch {}
+  });
+  fensterOpacityZurueck();
+  try {
+    mainWindow.focus();
+  } catch {}
+}
+function fensterIstMax() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return false;
+  }
+  try {
+    // Nicht isMaximized/isFullScreen trauen: nach Ziehen vom oberen Rand
+    // bleibt der Electron-Status oft haengen. Nur die echte Groesse zaehlt.
+    const _0xd = screen.getDisplayMatching(mainWindow.getBounds());
+    const _0xb = mainWindow.getBounds();
+    const _0xw = _0xd.workArea;
+    const _0xf = _0xd.bounds;
+    const _0xdeckt = (_0xfl, _0xtolX, _0xtolY) => Math.abs(_0xb.x - _0xfl.x) < _0xtolX && Math.abs(_0xb.y - _0xfl.y) < _0xtolY && Math.abs(_0xb.width - _0xfl.width) < 24 && Math.abs(_0xb.height - _0xfl.height) < 24;
+    return _0xdeckt(_0xw, 12, 12) || _0xdeckt(_0xf, 12, 12);
+  } catch {
+    try {
+      return !!(mainWindow.isMaximized() || mainWindow.isFullScreen());
+    } catch {
+      return false;
+    }
+  }
+}
 function createWindow() {
   // Im hellen Windows-Modus zeichnet Acrylic milchig-weiss; dunkel ist es fast schwarz.
   try {
@@ -15500,6 +16441,7 @@ function createWindow() {
     minHeight: 700,
     // Rahmenlos + transparent: nur so wirkt das Glas (fensterGlasSetzen). Die
     // Titelleiste mit Minimieren/Maximieren/Schliessen baut der Renderer selbst.
+    show: false,
     frame: false,
     transparent: true,
     resizable: true,
@@ -15515,6 +16457,16 @@ function createWindow() {
     }
   });
   mainWindow.loadFile(path.join(__dirname, "renderer", "index.html"));
+  mainWindow.once("ready-to-show", () => {
+    fensterStartAnimieren().catch(() => {
+      try {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      } catch {}
+    });
+  });
   // Kein Rechtsklick-Menue mit Kopieren / Bild speichern. In Eingabefeldern
   // bleibt nur Einfuegen und Alles-auswaehlen.
   mainWindow.webContents.on("context-menu", (_0xev, _0xparams) => {
@@ -15532,7 +16484,7 @@ function createWindow() {
   const _0xmaxMelden = () => {
     try {
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send("window:maximized", mainWindow.isMaximized());
+        mainWindow.webContents.send("window:maximized", fensterIstMax());
       }
     } catch {}
   };
@@ -15553,6 +16505,57 @@ function createWindow() {
     _0xmaxMelden();
     glasNachziehen();
   });
+  mainWindow.on("restore", _0xmaxMelden);
+  mainWindow.on("enter-full-screen", _0xmaxMelden);
+  mainWindow.on("leave-full-screen", _0xmaxMelden);
+  let _maxIconT = null;
+  let _maxPoll = null;
+  const electronMaxSync = () => {
+    if (!mainWindow || mainWindow.isDestroyed() || mausLinksGedrueckt()) {
+      return;
+    }
+    if (fensterIstMax()) {
+      return;
+    }
+    try {
+      if (mainWindow.isFullScreen()) {
+        mainWindow.setFullScreen(false);
+      }
+    } catch {}
+    try {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      }
+    } catch {}
+  };
+  const maxIconNachziehen = () => {
+    if (_maxIconT) {
+      clearTimeout(_maxIconT);
+    }
+    _maxIconT = setTimeout(() => {
+      _maxIconT = null;
+      _0xmaxMelden();
+    }, 40);
+    if (_maxPoll || process.platform !== "win32") {
+      return;
+    }
+    _maxPoll = setInterval(() => {
+      _0xmaxMelden();
+      if (!mausLinksGedrueckt()) {
+        clearInterval(_maxPoll);
+        _maxPoll = null;
+        electronMaxSync();
+        _0xmaxMelden();
+        setTimeout(() => {
+          electronMaxSync();
+          _0xmaxMelden();
+        }, 180);
+      }
+    }, 50);
+  };
+  mainWindow.on("resize", maxIconNachziehen);
+  mainWindow.on("move", maxIconNachziehen);
+  mainWindow.on("will-move", maxIconNachziehen);
   mainWindow.webContents.on("did-finish-load", _0xmaxMelden);
   let _monId = null;
   try {
@@ -15657,6 +16660,18 @@ function createWindow() {
     console.error("[Anruf] Session-Setup fehlgeschlagen:", _0xvcErr && _0xvcErr.message);
   }
   mainWindow.on("close", _0x447c3d => {
+    if (!_fensterCloseAnimFertig && !isQuitting) {
+      _0x447c3d.preventDefault();
+      fensterCloseAnimieren().then(() => {
+        _fensterCloseAnimFertig = true;
+        try {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.close();
+          }
+        } catch {}
+      });
+      return false;
+    }
     const _0x424abf = loadSettings();
     const _0xverstecken = !isQuitting && (_0x424abf.backgroundMode !== false || _0x424abf.performanceMode);
     if (_0xverstecken) {
@@ -15665,6 +16680,8 @@ function createWindow() {
         try {
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.hide();
+            fensterOpacityZurueck();
+            _fensterCloseAnimFertig = false;
           }
         } catch {}
       });
@@ -15688,9 +16705,17 @@ function createWindow() {
     Promise.resolve(perfSleepWindow()).catch(() => {});
   });
   mainWindow.on("restore", () => {
+    fensterOpacityZurueck();
+    if (_fensterMaxVorMin) {
+      _fensterMaxVorMin = false;
+      try {
+        mainWindow.maximize();
+      } catch {}
+    }
     perfWakeWindow();
   });
   mainWindow.on("show", () => {
+    fensterOpacityZurueck();
     perfWakeWindow();
   });
   mainWindow.on("enter-full-screen", () => mainWindow.webContents.send("fullscreen:changed", true));
@@ -15743,7 +16768,7 @@ function createWindow() {
   });
 }
 async function fetchVcChunk(_0x1ea9cf, _0x50db5c, _0xd9518e, _0x4dbbeb, _0xfb9d39, _0x53f00c = 3) {
-  const _0x47ecdc = _0x1ea9cf + "/removed/" + encodeURIComponent(_0x50db5c) + "/chunk/" + _0xd9518e;
+  const _0x47ecdc = _0x1ea9cf + "/api/games/" + encodeURIComponent(_0x50db5c) + "/chunk/" + _0xd9518e;
   for (let _0x2c6307 = 0; _0x2c6307 < _0x53f00c; _0x2c6307++) {
     try {
       const _0x4c11d8 = await fetch(_0x47ecdc, {
@@ -15911,11 +16936,11 @@ async function performVcDownload({
   };
   if (!_0x3cf1a6 && _0x39944e) {
     try {
-      const _0x1e1d00 = await fetch(_0x5f1c75 + "/removed", {
+      const _0x1e1d00 = await fetch(_0x5f1c75 + "/api/activation/create", {
         method: "POST",
         headers: {
           ..._0x5c2677,
-          ...watermarkHeaders(_0x5f1c75 + "/removed")
+          ...watermarkHeaders(_0x5f1c75 + "/api/activation/create")
         },
         body: JSON.stringify({
           userId: _0x39944e,
@@ -15936,11 +16961,11 @@ async function performVcDownload({
   let _0x78d68e = null;
   let _0x530430 = 0;
   try {
-    const _0xffac1f = await fetch(_0x5f1c75 + "/removed", {
+    const _0xffac1f = await fetch(_0x5f1c75 + "/api/download/start", {
       method: "POST",
       headers: {
         ..._0x5c2677,
-        ...watermarkHeaders(_0x5f1c75 + "/removed", _0x1c1ffd)
+        ...watermarkHeaders(_0x5f1c75 + "/api/download/start", _0x1c1ffd)
       },
       body: JSON.stringify(_0x3cf1a6 ? {
         game_id: _0x1bf83c,
@@ -15975,7 +17000,7 @@ async function performVcDownload({
     _0x4b3eb9 = path.join(_0x25394e, _0x592b4e);
   }
   try {
-    let _0x7016a = _0x78d68e.manifest && (/^https?:/i.test(_0x78d68e.manifest) ? _0x78d68e.manifest : _0x5f1c75 + _0x78d68e.manifest) || _0x5f1c75 + "/removed/" + encodeURIComponent(_0x1bf83c) + "/manifest";
+    let _0x7016a = _0x78d68e.manifest && (/^https?:/i.test(_0x78d68e.manifest) ? _0x78d68e.manifest : _0x5f1c75 + _0x78d68e.manifest) || _0x5f1c75 + "/api/games/" + encodeURIComponent(_0x1bf83c) + "/manifest";
     // Immer die NEUESTE Fassung laden: slot=latest erzwingen, wenn keine explizite version/slot in der URL steht.
     // Verhindert, dass eine alte/gecachte Manifest-URL vom download/start die alte Version herunterlädt.
     if (!/[?&](slot|version)=/i.test(_0x7016a)) _0x7016a += (_0x7016a.includes("?") ? "&" : "?") + "slot=latest";
@@ -16254,7 +17279,7 @@ async function checkVcGameUpdates() {
   try {
     for (const _0x11cb66 of _0x57c897) {
       const _0x18fb16 = (loadSettings().vcInstalled || {})[_0x11cb66] || {};
-      const _0x393a83 = await fetchJson(withPlatform(_0x2a2d37 + "/removed/" + encodeURIComponent(_0x11cb66) + "/manifest?slot=latest"), {
+      const _0x393a83 = await fetchJson(withPlatform(_0x2a2d37 + "/api/games/" + encodeURIComponent(_0x11cb66) + "/manifest?slot=latest"), {
         headers: {
           Authorization: "Bearer " + _0x3716bf.sessionToken
         }
@@ -16318,13 +17343,13 @@ async function setPresence(_0x378129) {
     return;
   }
   try {
-    await fetch(_0x5fe243 + "/removed", {
+    await fetch(_0x5fe243 + "/api/presence", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + _0x2a30e9.sessionToken,
         "X-Launcher-Version": app.getVersion(),
-        ...watermarkHeaders(_0x5fe243 + "/removed")
+        ...watermarkHeaders(_0x5fe243 + "/api/presence")
       },
       body: JSON.stringify({
         online: !!_0x378129,
@@ -16513,14 +17538,14 @@ async function reportLauncherVersion() {
   const _0x5b5a3c = !!_0x586615 && _0x586615 !== _0xeb42ad;
   const _0x5c9771 = new Date().toISOString();
   try {
-    const _0x4c3467 = await fetch(_0x55480c + "/removed", {
+    const _0x4c3467 = await fetch(_0x55480c + "/api/launcher/version", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...(_0x3e64ad.sessionToken ? {
           Authorization: "Bearer " + _0x3e64ad.sessionToken
         } : {}),
-        ...watermarkHeaders(_0x55480c + "/removed")
+        ...watermarkHeaders(_0x55480c + "/api/launcher/version")
       },
       body: JSON.stringify({
         userId: _0x1f9672,
@@ -16632,6 +17657,20 @@ if (!gotSingleLock) {
     }
     initWatermarkHwid();
     registerIpc();
+    try {
+      aiScanEngine.register({
+        ipcMain,
+        BrowserWindow,
+        app,
+        shell,
+        spawn,
+        socialApi,
+        loadSettings,
+        findSteamPath,
+        findEpicLauncherExe,
+        launcherScan
+      });
+    } catch (_0xaiReg) {}
     createWindow();
     // Von einer „Web zu App"-Desktop-Verknüpfung gestartet? → direkt App-Fenster öffnen.
     try {

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vystra Launcher – Download</title>
+  <meta name="description" content="Vystra Launcher 2.3 – alle Spiele in einem Fenster. Steam, Epic, GOG, Xbox, Chat, Cloud, Glas-UI. Quelltext zum Nachlesen.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080d18;
+      --card: #0f1628;
+      --line: #243049;
+      --text: #e8eef8;
+      --dim: #93a0b8;
+      --sky: #38bdf8;
+      --sky2: #0ea5e9;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: Geist, Segoe UI, system-ui, sans-serif; }
+    a { color: var(--sky); }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 80px; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 48px; }
+    .brand { font-weight: 800; letter-spacing: .02em; }
+    .badge { font-size: 12px; font-weight: 700; color: #7dd3fc; background: rgba(14,165,233,.14); border: 1px solid rgba(56,189,248,.25); padding: 5px 10px; border-radius: 999px; }
+    h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.05; margin: 0 0 16px; letter-spacing: -.03em; }
+    .lead { font-size: 18px; color: var(--dim); max-width: 720px; line-height: 1.55; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 18px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 13px 20px; border-radius: 12px; font-weight: 800; text-decoration: none; border: 1px solid transparent; }
+    .btn-pri { background: linear-gradient(135deg, #38bdf8, #0284c7); color: #041018; }
+    .btn-pri:hover { filter: brightness(1.06); }
+    .btn-ghost { background: transparent; color: var(--text); border-color: var(--line); }
+    .btn-ghost:hover { border-color: var(--sky); color: #fff; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; color: var(--dim); font-size: 13px; font-weight: 600; }
+    .chips span { border: 1px solid var(--line); padding: 5px 10px; border-radius: 999px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-top: 36px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+    .card h3 { margin: 0 0 8px; font-size: 16px; }
+    .card p { margin: 0; color: var(--dim); font-size: 14px; line-height: 1.5; }
+    h2 { font-size: 26px; margin: 56px 0 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    th { color: var(--dim); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .yes { color: #4ade80; font-weight: 700; }
+    .soon { color: #fbbf24; font-weight: 700; }
+    .trust { margin-top: 40px; padding: 22px; border-radius: 18px; border: 1px solid rgba(56,189,248,.28); background: linear-gradient(180deg, rgba(14,165,233,.08), transparent); }
+    footer { margin-top: 48px; color: var(--dim); font-size: 13px; }
+    @media (max-width: 640px) { header { flex-direction: column; align-items: flex-start; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">Vystra</div>
+      <div class="badge">Windows · kostenlos · Alpha 2.3.3</div>
+    </header>
+
+    <h1>Alle deine Spiele.<br>Ein Fenster. Null Chaos.</h1>
+    <p class="lead">Vystra bündelt Steam, Epic, Xbox, Ubisoft, EA, GOG, itch und eigene Titel. Shop, Bibliothek, Freunde, Chat, Cloud, Musik und Glas-UI — werbefrei. Von Stefan Reibnegger.</p>
+
+    <div class="actions">
+      <a class="btn btn-pri" href="https://github.com/Stefan2010byte/viscode-launcher/releases/latest">Launcher herunterladen</a>
+      <a class="btn btn-ghost" href="https://github.com/Stefan2010byte/vystra-launcher-source">Quelltext nachlesen</a>
+      <a class="btn btn-ghost" href="funktionen.html">Was der Launcher kann</a>
+    </div>
+    <div class="chips">
+      <span>Werbefrei</span>
+      <span>Gast-Modus</span>
+      <span>Preisvergleich</span>
+      <span>Family</span>
+      <span>GeForce NOW</span>
+      <span>Auto-Updates</span>
+    </div>
+
+    <h2>Warum Vystra?</h2>
+    <div class="grid">
+      <div class="card"><h3>Eine Bibliothek</h3><p>Scannt Steam, Epic, Ubisoft, EA, GOG, Xbox und itch. Installierte Titel grün umrandet und oben. Extra-Launcher lassen sich verknüpfen.</p></div>
+      <div class="card"><h3>Shop &amp; Preisvergleich</h3><p>Steam, Epic, Xbox, EA, Ubisoft, GOG, itch, Gratis-Aktionen und der eigene Vystra-Store. 💰 zeigt den günstigsten Preis über die Stores.</p></div>
+      <div class="card"><h3>Freunde &amp; Chat</h3><p>Vystra-Freunde plus Steam/Epic/Xbox. Text, Bilder, Dateien, GIFs, Anrufe mit Audio, Video und Bildschirm.</p></div>
+      <div class="card"><h3>Cloud Gaming</h3><p>NVIDIA GeForce NOW im Launcher. ESC 5 Sekunden halten beendet das Vollbild — nicht aus Versehen.</p></div>
+      <div class="card"><h3>Glas &amp; Customizing</h3><p>Windows-Acrylic-Glas, Hintergrund-Studio, .vybg-Dateien, Musikplayer, Web-Apps aus jeder Seite.</p></div>
+      <div class="card"><h3>Family &amp; Gast</h3><p>Bibliothek in der Familie teilen. Ohne Konto: Scanner, lokale Bibliothek, Web-Apps und Musik. Käufe und Chat brauchen ein Konto.</p></div>
+      <div class="card"><h3>Downloads</h3><p>Warteschlange im Epic-Stil, Datenträger wählen, Auto-Update für Vystra-Spiele, Desktop-Verknüpfungen.</p></div>
+      <div class="card"><h3>Zubehör</h3><p>Eigener Zubehör-Bereich ist <b>coming</b> — die Seite öffnet sich, der Shop folgt.</p></div>
+    </div>
+
+    <h2>Im Vergleich</h2>
+    <div class="card" style="overflow:auto">
+      <table>
+        <thead>
+          <tr><th>Funktion</th><th>Vystra</th><th>Playnite</th><th>GOG Galaxy</th><th>Steam / Epic</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Multi-Store-Bibliothek</td><td class="yes">Ja</td><td class="yes">Ja</td><td>teilweise</td><td>Nein</td></tr>
+          <tr><td>Eigener Shop</td><td class="yes">Ja</td><td>Nein</td><td>nur GOG</td><td>nur eigener</td></tr>
+          <tr><td>Preisvergleich über Stores</td><td class="yes">Ja</td><td>Plugins</td><td>Nein</td><td>Nein</td></tr>
+          <tr><td>Freunde, Chat, Anrufe</td><td class="yes">Ja</td><td>Nein</td><td>begrenzt</td><td>Ja</td></tr>
+          <tr><td>Cloud (GeForce NOW)</td><td class="yes">Ja</td><td>Nein</td><td>Nein</td><td>teils</td></tr>
+          <tr><td>Glas-UI &amp; Hintergründe</td><td class="yes">Ja</td><td>Plugins</td><td>gering</td><td>begrenzt</td></tr>
+          <tr><td>Webseiten als Apps</td><td class="yes">Ja</td><td>Nein</td><td>Nein</td><td>Nein</td></tr>
+          <tr><td>Family Sharing (Vystra)</td><td class="yes">Ja</td><td>Nein</td><td>Nein</td><td>Steam Family</td></tr>
+          <tr><td>Werbefrei</td><td class="yes">Ja</td><td class="yes">Ja</td><td>Nein</td><td>Nein</td></tr>
+          <tr><td>Zubehör-Shop</td><td class="soon">Kommt bald</td><td>Nein</td><td>Nein</td><td>Nein</td></tr>
+          <tr><td>Quelltext zum Prüfen</td><td class="yes">Ja</td><td class="yes">Ja</td><td>Nein</td><td>Nein</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="trust" id="download">
+      <h2 style="margin-top:0">Download &amp; Vertrauen</h2>
+      <p class="lead" style="font-size:16px">Offizielle Builds nur von dieser Seite oder GitHub Releases. Windows SmartScreen kann bei einer jungen, selbst signierten App warnen — das ist kein Virus. Den Code kannst du nachlesen.</p>
+      <div class="actions">
+        <a class="btn btn-pri" href="https://github.com/Stefan2010byte/viscode-launcher/releases/latest">Setup herunterladen</a>
+        <a class="btn btn-ghost" href="https://github.com/Stefan2010byte/vystra-launcher-source">Quelltext nachlesen</a>
+      </div>
+      <p style="color:var(--dim);font-size:13px;margin:0">Öffentliche Quelle unter Functional Source License (FSL-1.1): lesen, lernen, Mods bauen ja — konkurrierenden Launcher/Shop verkaufen nein. API-Doku liegt im Quell-Repo unter docs/. Autor: Stefan Reibnegger.</p>
+    </div>
+
+    <h2>In drei Schritten</h2>
+    <div class="grid">
+      <div class="card"><h3>01 · Installieren</h3><p>Windows-Setup laden. Portable und Linux sind vorbereitet. Autostart und Tray sind optional.</p></div>
+      <div class="card"><h3>02 · Verbinden</h3><p>Konto, Steam/Epic oder Gast. Der Assistent scannt Epic, Steam, Ubisoft und EA.</p></div>
+      <div class="card"><h3>03 · Spielen</h3><p>Bibliothek, Shop, Cloud oder Freunde. Sprachen: DE, EN, ES, FR, PL, HU, LB.</p></div>
+    </div>
+
+    <p style="margin-top:36px"><a href="funktionen.html">Vollständige Funktionsliste aus dem Quellcode →</a></p>
+
+    <h2 id="sicherheit">Sicherheit</h2>
+    <div class="trust">
+      <p class="lead" style="font-size:16px">Offizielle Installer nur von dieser Seite oder den GitHub-Releases. Andere EXEs, Repacks oder weitergeleitete Setups nicht vertrauen.</p>
+      <p style="color:var(--dim);font-size:15px;line-height:1.55">Den Launcher-Quelltext kannst du unter der Functional Source License (FSL-1.1) nachlesen und für Mods nutzen — nicht als konkurrierenden Launcher oder Shop verkaufen.</p>
+      <div class="actions">
+        <a class="btn btn-ghost" href="https://github.com/Stefan2010byte/vystra-launcher-source">Quelltext nachlesen</a>
+        <a class="btn btn-ghost" href="https://github.com/Stefan2010byte/vystra-launcher-source/blob/main/LICENSE">Lizenz fürs Modden (FSL-1.1)</a>
+        <a class="btn btn-ghost" href="https://github.com/Stefan2010byte/vystra-launcher-source/blob/main/SECURITY.md">Sicherheitshinweise</a>
+      </div>
+    </div>
+
+    <footer>© 2026 Stefan Reibnegger · Vystra · <a href="https://vystra.games">vystra.games</a></footer>
+  </div>
+</body>
+</html>

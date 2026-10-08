@@ -1,5 +1,3 @@
-# Vystra Launcher — Copyright (c) 2026 Stefan Reibnegger (Vystra)
-# FSL-1.1-ALv2 (Functional Source License) — no competing commercial product.
 # Liest die Bibliothek der Xbox-App aus.
 #   -Mode uia   : Spielnamen per UI Automation sammeln (scrollt die Liste durch)
 #   -Mode shots : statt Text Screenshots je Scroll-Seite nach -OutDir schreiben (fuer die Vision-KI)

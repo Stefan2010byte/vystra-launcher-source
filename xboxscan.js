@@ -1,11 +1,3 @@
-/**
- * Vystra Launcher — public review source
- * Copyright (c) 2026 Stefan Reibnegger (Vystra)
- * Author: Stefan Reibnegger
- * License: FSL-1.1-ALv2 (Functional Source License) — no competing commercial product.
- * Official binaries: https://github.com/Stefan2010byte/viscode-launcher
- * This copy has Vystra server APIs and the Vystra shop backend removed.
- */
 "use strict";
 // Xbox-Scanner: Abo-Status, Game-Pass-Katalog, Bibliothek aus der Xbox-App
 // (UI Automation, Vision-KI als Ersatz) und das Zusammenfuehren aller Quellen.

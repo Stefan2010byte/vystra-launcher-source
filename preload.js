@@ -1,11 +1,3 @@
-/**
- * Vystra Launcher — public review source
- * Copyright (c) 2026 Stefan Reibnegger (Vystra)
- * Author: Stefan Reibnegger
- * License: FSL-1.1-ALv2 (Functional Source License) — no competing commercial product.
- * Official binaries: https://github.com/Stefan2010byte/viscode-launcher
- * This copy has Vystra server APIs and the Vystra shop backend removed.
- */
 const {
   contextBridge,
   ipcRenderer
@@ -51,6 +43,9 @@ contextBridge.exposeInMainWorld("viscode", {
   gamerpowerFree: () => ipcRenderer.invoke("gamerpower:free"),
   dealsList: () => ipcRenderer.invoke("deals:list"),
   dealsForTitle: arg => ipcRenderer.invoke("deals:forTitle", arg),
+  clipsTrending: () => ipcRenderer.invoke("clips:trending"),
+  clipsForTitle: arg => ipcRenderer.invoke("clips:forTitle", arg || {}),
+  clipsMine: () => ipcRenderer.invoke("clips:mine"),
   // Preisvergleich ueber alle Stores (CheapShark + optional ITAD, siehe main.js).
   preiseStores: () => ipcRenderer.invoke("preise:stores"),
   preiseVergleich: _0xpvA => ipcRenderer.invoke("preise:vergleich", _0xpvA),
@@ -96,7 +91,9 @@ contextBridge.exposeInMainWorld("viscode", {
   ubisoftStatus: () => ipcRenderer.invoke("ubisoft:status"),
   ubisoftLogout: () => ipcRenderer.invoke("ubisoft:logout"),
   ubisoftScan: () => ipcRenderer.invoke("ubisoft:scan"),
-  launcherScan: () => ipcRenderer.invoke("launcher:scan"),
+  launcherScan: _0xslOpt => ipcRenderer.invoke("launcher:scan", _0xslOpt || {}),
+  demoOpenEpicWatch: () => ipcRenderer.invoke("demo:openEpicWatch"),
+  demoOpenForeignLaunchers: () => ipcRenderer.invoke("demo:openForeignLaunchers"),
   onLauncherScanLive: _0xslCb => ipcRenderer.on("launcher:scanLive", (_0xslE, _0xslD) => _0xslCb(_0xslD)),
   launcherCrowdDetect: () => ipcRenderer.invoke("launcher:crowdDetect"),
   addLauncherManual: () => ipcRenderer.invoke("launcher:addManual"),
@@ -175,6 +172,9 @@ contextBridge.exposeInMainWorld("viscode", {
   webappDesktopFromLinks: _0xwaL => ipcRenderer.invoke("webapp:desktop-from-links", _0xwaL),
   webappUninstall: _0xwaX => ipcRenderer.invoke("webapp:uninstall", _0xwaX),
   webappUpdate: _0xwaUp => ipcRenderer.invoke("webapp:update", _0xwaUp),
+  webappLaunchPkg: _0xwp => ipcRenderer.invoke("webapp:launch-pkg", _0xwp),
+  webappUninstallPkg: _0xwu => ipcRenderer.invoke("webapp:uninstall-pkg", _0xwu),
+  onWebappPkgDone: _0xcb => ipcRenderer.on("webapp:pkg-done", (_0xe, _0xd) => _0xcb(_0xd || {})),
   // Chromium-eigene Auto-Dunkelfunktion je Ansicht schalten (siehe main.js).
   webAutoDunkel: _0xadA => ipcRenderer.invoke("web:autodunkel", _0xadA || {}),
   autostartStatus: _0xasA => ipcRenderer.invoke("autostart:status", _0xasA),
