@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vystra Launcher – Funktionsliste</title>
+  <title>Vystra Launcher – Alle Funktionen</title>
   <style>
-    :root { --bg:#080d18; --text:#e8eef8; --dim:#93a0b8; --line:#243049; --sky:#38bdf8; }
+    :root { --bg:#080d18; --text:#e8eef8; --dim:#93a0b8; --line:#243049; --sky:#38bdf8; --soon:#fbbf24; }
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--bg); color: var(--text); font-family: Segoe UI, system-ui, sans-serif; line-height: 1.55; }
     .wrap { max-width: 820px; margin: 0 auto; padding: 28px 20px 80px; }
@@ -15,73 +15,145 @@
     p, li { color: var(--dim); }
     ul { padding-left: 18px; }
     .top { display: flex; gap: 14px; flex-wrap: wrap; margin: 18px 0 28px; }
+    .soon { color: var(--soon); font-weight: 700; }
+    .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
+    .toc a { font-size: 13px; text-decoration: none; border: 1px solid var(--line); padding: 4px 10px; border-radius: 999px; }
+    .toc a:hover { border-color: var(--sky); }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Was der Vystra Launcher kann</h1>
-    <p>Aus dem Quellcode, Stand Version 2.3.2a. Für Nutzer geschrieben — ohne Server-Interna.</p>
+    <h1>Alle Funktionen</h1>
+    <p>Vystra Launcher, Stand <b>2.3.2a</b>. Aus dem Quellcode, für Nutzer — ohne Server-Interna.</p>
     <div class="top">
       <a href="index.html">← Download-Seite</a>
       <a href="https://github.com/Stefan2010byte/vystra-launcher-source">Quelltext nachlesen</a>
     </div>
+    <div class="toc">
+      <a href="#start">Start</a>
+      <a href="#konto">Konto</a>
+      <a href="#nav">Leiste</a>
+      <a href="#shop">Shop</a>
+      <a href="#bibliothek">Bibliothek</a>
+      <a href="#clips">Clips</a>
+      <a href="#freunde">Freunde</a>
+      <a href="#cloud">Cloud</a>
+      <a href="#downloads">Downloads</a>
+      <a href="#design">Design</a>
+      <a href="#musik">Musik &amp; Web</a>
+      <a href="#family">Family</a>
+      <a href="#mehr">Mehr</a>
+      <a href="#geplant">Geplant</a>
+      <a href="#sicherheit">Sicherheit</a>
+    </div>
 
-    <h2>Fenster &amp; Start</h2>
+    <h2 id="start">Fenster &amp; Start</h2>
     <ul>
-      <li>Rahmenloses Fenster mit eigener Titelleiste, Glas (Windows Acrylic), Ziehen und Snap-Maximieren am oberen Rand.</li>
+      <li>Rahmenloses Fenster, eigene Titelleiste, Glas (Windows Acrylic), Ziehen und Snap-Maximieren.</li>
       <li>Minimieren, Maximieren, Schließen in den Tray (nicht hart beenden).</li>
       <li>Start-Animation, Anmelden oder Gast, Einrichtungs-Assistent für Steam/Epic/Ubisoft/EA.</li>
-      <li>Sprachen: Deutsch, Englisch, Spanisch, Französisch, Polnisch, Ungarisch, Luxemburgisch.</li>
+      <li>Sprachen: Deutsch, Englisch, Spanisch, Französisch, Polnisch, Ungarisch, Luxemburgisch (weitere folgen über die Übersetzung).</li>
       <li>Autostart, Auto-Updates, Offline: installierte Spiele, Bibliothek und Musik bleiben nutzbar.</li>
       <li>Performance-Modus für schwächere PCs.</li>
+      <li>Deep-Links, .vybg-Dateien per Doppelklick, Portable + Windows-Setup, Linux vorbereitet.</li>
     </ul>
 
-    <h2>Konto</h2>
+    <h2 id="konto">Konto</h2>
     <ul>
-      <li>Benutzername, OAuth, Steam/Epic-Login, One-Click, Konten-Schnellwechsel.</li>
+      <li>Benutzername, OAuth, Steam/Epic-Login, One-Click, Konten-Schnellwechsel, Konten exportieren.</li>
       <li>Gast-Modus: Scanner, lokale Bibliothek, Web-Apps, Musik. Kein Chat, keine Käufe.</li>
-      <li>Profilbild/Banner (Datei oder GIF), 2FA per E-Mail, Family Sharing, Guthaben, Keys, Tagesbelohnung.</li>
+      <li>Profilbild/Banner (Datei oder GIF), 2FA per E-Mail, Passwort ändern, Konto löschen (Frist), Daten-Export.</li>
+      <li>Family Sharing, Guthaben, Keys einlösen, Tagesbelohnung, Rechnungen / Firmendaten.</li>
+      <li>Credits, AGB, öffentliches Profil auf vystra.games.</li>
     </ul>
 
-    <h2>Shop</h2>
+    <h2 id="nav">Kopfzeile &amp; Navigation</h2>
     <ul>
-      <li>Kanäle: Steam, Epic, Xbox, EA, Ubisoft, GOG, itch, Vystra, Gratis-Aktionen.</li>
-      <li>Entdecken, Alle Spiele, Suche, Angebote, Neuerscheinungen, Topseller.</li>
-      <li>Preisvergleich über Stores. 18+-Filter. Warenkorb. Reviews.</li>
-      <li>Zubehör: Seite öffnet sich, Shop ist Coming.</li>
-      <li>Fenster: Startanimation, Minimieren nach unten, X blendet in 0,5 s aus.</li>
-      <li>Bibliothek-Extras wieder an: VR, Web-Apps, Gerät hinzufügen, erkannte Launcher.</li>
+      <li>Beim ersten Konto: Popup, welche Kategorien oben bleiben sollen.</li>
+      <li>Immer da: Alle Spiele, Meine Bibliothek, Einstellungen, Suche, Profil, Sprachen.</li>
+      <li>Optional: Entdecken, Clips, Freunde, Cloud Gaming, Zubehör, Preisvergleich, Background, Musikplayer, Web.</li>
+      <li>Rechts: Guthaben, Downloads, Warenkorb, Avatar, Fensterknöpfe. Schmale Fenster klappen die Leiste zusammen.</li>
     </ul>
 
-    <h2>Bibliothek</h2>
+    <h2 id="shop">Shop &amp; Entdecken</h2>
     <ul>
-      <li>Reiter je Plattform, Favoriten, eigene Kategorien, Family, verknüpfte Launcher.</li>
-      <li>Installierte Spiele oben, grüner Rahmen. Starten, Ordner, Verknüpfung, Stop.</li>
+      <li>Kanäle: Steam, Epic, Xbox, EA, Ubisoft, GOG, itch, Vystra, Gratis-Aktionen — einzeln ein-/ausblendbar.</li>
+      <li>Entdecken, Alle Spiele, Suche, Angebote, Neuerscheinungen, Topseller, Hero, Gratis-Giveaways.</li>
+      <li>Preisvergleich über Stores (💰). 18+-Filter. Warenkorb. Reviews, Trailer, Patchnotes.</li>
+      <li>Zubehör: Seite öffnet sich, Shop ist <span class="soon">Kommt bald</span> (Zurück-Knopf, dunkle Seite).</li>
+    </ul>
+
+    <h2 id="bibliothek">Bibliothek</h2>
+    <ul>
+      <li>Reiter je Plattform (Steam, Epic, Xbox, EA, Ubisoft, GOG, itch, Vystra), Favoriten, eigene Kategorien, Family, verknüpfte Launcher.</li>
+      <li>Installierte Spiele oben, grüner Rahmen. Starten, Ordner, Desktop-Verknüpfung, Stop, Favorit, Anpinnen.</li>
       <li>Scan von Steam, Epic, Ubisoft, EA, GOG, Xbox (inkl. Game Pass), itch. Manuell Ordner hinzufügen.</li>
+      <li>Fremde Launcher scannen standardmäßig aus — erst in der Bibliothek oder per „Neu scannen“.</li>
       <li>PlayStation- und Nintendo-Store zum Stöbern, keine volle Konsolen-Bibliothek.</li>
+      <li>Bibliothek als Karte teilen. Hochformat-Kacheln oder Querformat.</li>
     </ul>
 
-    <h2>Freunde &amp; Chat</h2>
+    <h2 id="clips">Clips</h2>
     <ul>
-      <li>Freunde von Vystra, Steam, Epic, Xbox. Teams, Anfragen.</li>
+      <li>Game-Clips von Medal.tv in einer eigenen Kategorie oben.</li>
+    </ul>
+
+    <h2 id="freunde">Freunde &amp; Chat</h2>
+    <ul>
+      <li>Freunde von Vystra, Steam, Epic, Xbox. Teams, Anfragen, Presence.</li>
       <li>Chat: Text, Bilder, Dateien, GIFs. Anrufe: Audio, Video, Bildschirm.</li>
       <li>Geschenke und Family-Einladungen.</li>
     </ul>
 
-    <h2>Cloud, Downloads, Aussehen</h2>
+    <h2 id="cloud">Cloud Gaming</h2>
     <ul>
-      <li>GeForce NOW im Overlay. ESC 5 Sekunden halten beendet Vollbild.</li>
-      <li>Download-Warteschlange, Datenträgerwahl, Auto-Update für Vystra-Spiele.</li>
-      <li>Hintergründe: Standard, Animiert, Transparenz/Glas. Export als .vybg. Als Windows-Desktop setzbar.</li>
-      <li>Vystra Player für lokale Musik. Websites in der Leiste, Web-Apps mit Desktop-Icon.</li>
+      <li>NVIDIA GeForce NOW im Overlay.</li>
+      <li>ESC 5 Sekunden halten beendet Vollbild — nicht aus Versehen.</li>
     </ul>
 
-    <h2>Weiteres</h2>
+    <h2 id="downloads">Downloads</h2>
+    <ul>
+      <li>Warteschlange im Epic-Stil, Reihenfolge, Abbrechen, mehrere gleichzeitig.</li>
+      <li>Datenträger wählen, Auto-Update für Vystra-Spiele, Desktop-Verknüpfungen, Deinstallieren.</li>
+    </ul>
+
+    <h2 id="design">Designs &amp; Hintergründe</h2>
+    <ul>
+      <li>Designs in den Einstellungen (unter Background): Vystra, GOG, Steam, Microsoft.</li>
+      <li>8-Bit und Selber-erstellen: <span class="soon">Kommt bald</span>.</li>
+      <li>Hintergründe: Standard, Animiert, Transparenz/Glas. Farben komplett löschbar.</li>
+      <li>Export als .vybg, als Windows-Desktop setzbar, eigener Freunde-Chat-Hintergrund.</li>
+      <li>UI-Farbe und Eckradius einstellbar.</li>
+    </ul>
+
+    <h2 id="musik">Musik &amp; Web</h2>
+    <ul>
+      <li>Vystra Player für lokale Musik (Ordner, Shuffle, Repeat).</li>
+      <li>Websites in der Leiste, Tabs, optional im Hintergrund weiterlaufen.</li>
+      <li>Web-Apps mit Desktop-Icon aus jeder Seite.</li>
+    </ul>
+
+    <h2 id="family">Family</h2>
+    <ul>
+      <li>Familie gründen/beitreten, Mitglieder, Parental Controls, geteilte Vystra-Käufe.</li>
+    </ul>
+
+    <h2 id="mehr">Weiteres</h2>
     <ul>
       <li>VR/Quest und HDMI-Geräte: Technik ist da, Teile der UI noch geparkt.</li>
-      <li>Publisher-Portal für eigene Spiele. Fairer Store-Anteil für Entwickler.</li>
+      <li>Publisher-Portal für eigene Spiele. Fairer Store-Anteil für Entwickler. Studio: kommt.</li>
+      <li>Öffentliche APIs im Einstellungs-Text (Spiele, Reviews, Login, Bibliothek, Chat …).</li>
       <li>Kein Kopieren von UI-Text/Bildern (Eingabefelder ausgenommen).</li>
       <li>Keine Affiliate-Links im Zubehör. Keine Steam/Epic-Passwörter im Launcher.</li>
+    </ul>
+
+    <h2 id="geplant">Geplant</h2>
+    <ul>
+      <li>Epic- &amp; Xbox-Katalog wieder live über die offiziellen APIs.</li>
+      <li>Overlay im Spiel (Chat/Voice). Clips sind schon da.</li>
+      <li>Vystra Game Engine.</li>
+      <li>Echter Zubehör-Shop. Echtgeld-Kasse.</li>
+      <li>8-Bit-Look und Design-Engine (Selber machen).</li>
     </ul>
 
     <h2 id="sicherheit">Sicherheit</h2>
